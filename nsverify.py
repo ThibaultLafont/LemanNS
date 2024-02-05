@@ -1,4 +1,5 @@
 import requests
+import time
 import json
 import xml.etree.ElementTree as ET
 
@@ -29,6 +30,26 @@ def empty_json(region: str):
     empty_data = {}
     with open(filepath, "w") as json_file:
         json.dump(empty_data, json_file)
+
+##################### USER LIST FUNCTIONS #####################
+
+def get_superregion(region: str):
+    """
+    Returns the superregion of the given region.
+
+    Args:
+        region (str): The name of the region.
+
+    Returns:
+        str: The superregion of the given region.
+    """
+    if region in AC:
+        return "Alstroemerian Commonwealths"
+    if region in FNF:
+        return "The Free Nations Federation"
+    if region in AA:
+        return "Augustin Alliance"
+    return None
 
 ##################### REGION LIST FUNCTIONS #####################
 def nation_json(user: str, nation: str, region:str, superregion: str):
@@ -61,6 +82,48 @@ def nation_json(user: str, nation: str, region:str, superregion: str):
         print(f"Nation '{nation}' already exists in the list.")
         return
     nations_list[key] = nation
+    with open(filepath, "w") as json_file:
+        json.dump(nations_list, json_file)
+
+def region_checkup(region: str):
+    """
+    Performs a checkup on the given region by retrieving a list of nations associated with the region,
+    and removing any nations that are no longer part of the region.
+
+    Args:
+        region (str): The name of the region to perform the checkup on.
+
+    Returns:
+        None
+    """
+    i = 0
+    superregion = get_superregion(region)
+    if superregion is not None:
+        filepath = f"/home/thibault/delivery/INN/Leman/Regions/{superregion}/{region}.json"
+    else:
+        filepath = f"/home/thibault/delivery/INN/Leman/Regions/{region}.json"
+
+    try:
+        with open(filepath, "r") as json_file:
+            nations_list = json.load(json_file)
+    except (FileNotFoundError, json.decoder.JSONDecodeError):
+        nations_list = {}
+
+    for key in nations_list:
+        nation = nations_list[key]
+        url = f"https://www.nationstates.net/cgi-bin/api.cgi?nation={nation}&q=region"
+        response = requests.get(url, headers=headers)
+        i += 1
+        root = ET.fromstring(response.text)
+        response = root.find('REGION').text
+        print(response)
+        if response != region:
+            print(f"Removing '{nation}' from the list.")
+            del nations_list[key]
+        if (i == 30):
+            i = 0
+            time.sleep(30)
+
     with open(filepath, "w") as json_file:
         json.dump(nations_list, json_file)
 
@@ -131,13 +194,7 @@ def nation_in_region(user: str, nation: str, region: str):
     if region == None:
         region = response
     if response == region:
-        superregion = None
-        if region in AC:
-            superregion = "AC"
-        if region in FNF:
-            superregion = "FNR"
-        if region in AA:
-            superregion = "AA"
+        superregion = get_superregion(region)
         region = simplify_region(region)
         nation_json(user, nation, region, superregion)
     return response
