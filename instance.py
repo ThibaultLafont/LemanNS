@@ -105,12 +105,15 @@ async def verify(ctx, nation: str, key: str):
 async def verify_auto(interaction, nation: str):
     user = interaction.user  # Get the discord.User object from the interaction
     await interaction.response.send_message("I have sent you a DM! If you have not received any, make sure you have enabled DMs from server members.")
+
     await user.send("Please enter your nation verification key which can be found here: https://www.nationstates.net/page=verify_login")
     key = await bot.wait_for('message', check=lambda message: message.author == user and isinstance(message.channel, discord.DMChannel))
+
     if key.content == "cancel":
         await user.send("Cancelled")
         return
-    print(key.content)
+    print(f"nation:{nation} key:{key.content} are being tested")
+
     if nsverify.verify_nation(nation, key.content):
         await user.send("Verified")
         region = nsverify.nation_in_region(user, nation, None)
@@ -120,6 +123,8 @@ async def verify_auto(interaction, nation: str):
             await interaction.user.add_roles(role)
     else:
         await user.send("Not verified")
+
+    print("done")
 
 #################### SLASH - Government - COMMANDS ####################
 @bot.tree.command(name="stv_calculate", description="Calculate the results of an STV election")
