@@ -146,18 +146,17 @@ async def verify_auto(interaction, nation: str):
 @bot.tree.command(name="checkup", description="Updates the list of nations in a region")
 @has_permissions(administrator=True)
 async def checkup(ctx, region: str):
-    removed_nations, removed_count = nsverify.checkup(region)
-    await ctx.response.send_message(f"Removed {removed_count} nations: {removed_nations}")
-    await ctx.response.send_message(f"Updating the amount of people holding the role for {region}...")
+    removed_nations, removed_count = nsverify.region_checkup(region)
+    message = f"Removed {removed_count} nations: {removed_nations}\n"
 
     server = ctx.guild
     role = discord.utils.get(server.roles, name=region)
     superregion = nsverify.get_superregion(region)
 
     if superregion is not None:
-        filepath = f"/home/thibault/delivery/INN/Leman/Regions/{superregion}/{region}.json"
+        filepath = f"/home/thibault/delivery/INN/LemanNS/Regions/{superregion}/{region}.json"
     else:
-        filepath = f"/home/thibault/delivery/INN/Leman/Regions/{region}.json"
+        filepath = f"/home/thibault/delivery/INN/LemanNS/Regions/{region}.json"
 
     try:
         with open(filepath, "r") as json_file:
@@ -174,7 +173,8 @@ async def checkup(ctx, region: str):
                 await member.remove_roles(role)
                 print(f"Removed role '{role.name}' from user {member}")
 
-    await ctx.response.send_message(f"Update completed.")
+    message += "\nUpdate completed."
+    await ctx.response.send_message(message)
 
 #################### SLASH - Government - COMMANDS ####################
 @bot.tree.command(name="stv_calculate", description="Calculate the results of an STV election")
