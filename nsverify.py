@@ -24,9 +24,9 @@ def empty_json(region: str):
     if region in AA:
         superregion = "AA"
     if superregion is not None:
-        filepath = f"/home/thibault/delivery/INN/Leman/Regions/{superregion}/{region}.json"
+        filepath = f"/home/thibault/delivery/INN/LemanNS/Regions/{superregion}/{region}.json"
     else:
-        filepath = f"/home/thibault/delivery/INN/Leman/Regions/{region}.json"
+        filepath = f"/home/thibault/delivery/INN/LemanNS/Regions/{region}.json"
     empty_data = {}
     with open(filepath, "w") as json_file:
         json.dump(empty_data, json_file)
@@ -66,9 +66,9 @@ def nation_json(user: str, nation: str, region:str, superregion: str):
         None
     """
     if superregion is not None:
-        filepath = f"/home/thibault/delivery/INN/Leman/Regions/{superregion}/{region}.json"
+        filepath = f"/home/thibault/delivery/INN/LemanNS/Regions/{superregion}/{region}.json"
     else:
-        filepath = f"/home/thibault/delivery/INN/Leman/Regions/{region}.json"
+        filepath = f"/home/thibault/delivery/INN/LemanNS/Regions/{region}.json"
     try:
         with open(filepath, "r") as json_file:
             nations_list = json.load(json_file)
@@ -97,11 +97,13 @@ def region_checkup(region: str):
         None
     """
     i = 0
+    removed_nations = []
+    removed_count = 0
     superregion = get_superregion(region)
     if superregion is not None:
-        filepath = f"/home/thibault/delivery/INN/Leman/Regions/{superregion}/{region}.json"
+        filepath = f"/home/thibault/delivery/INN/LemanNS/Regions/{superregion}/{region}.json"
     else:
-        filepath = f"/home/thibault/delivery/INN/Leman/Regions/{region}.json"
+        filepath = f"/home/thibault/delivery/INN/LemanNS/Regions/{region}.json"
 
     try:
         with open(filepath, "r") as json_file:
@@ -111,21 +113,27 @@ def region_checkup(region: str):
 
     for key in nations_list:
         nation = nations_list[key]
+        print(f"Checking '{nation}'...")
         url = f"https://www.nationstates.net/cgi-bin/api.cgi?nation={nation}&q=region"
         response = requests.get(url, headers=headers)
         i += 1
         root = ET.fromstring(response.text)
         response = root.find('REGION').text
-        print(response)
+        response = response.rstrip('\n')  # Remove '\n' at the end of the response
         if response != region:
             print(f"Removing '{nation}' from the list.")
             del nations_list[key]
+            removed_nations.append(nation)
+            removed_count += 1
         if (i == 30):
             i = 0
             time.sleep(30)
 
-    with open(filepath, "w") as json_file:
-        json.dump(nations_list, json_file)
+        with open(filepath, "w") as json_file:
+            json.dump(nations_list, json_file)
+
+        print("removed nations == ", removed_nations)
+        return removed_nations, removed_count
 
 ##################### NATION VERIFICATION FUNCTIONS #####################
 def verify_nation(nation: str, key: str):
