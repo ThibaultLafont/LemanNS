@@ -1,6 +1,8 @@
 import nsverify
 import discord
 import os
+import json
+import aiohttp
 from discord.ext import commands
 from discord.ext.commands import has_permissions
 from discord.ext.commands import has_role
@@ -29,16 +31,23 @@ bot = Bot(intents=intents)
 async def regular_command(ctx: commands.Context):
     await ctx.reply("Syncing...")
     await bot.tree.sync()
-    print("synced")
-    await ctx.reply("synced")
-    for command in bot.walk_commands():
-        await ctx.send(f"Command: {command.name}, Description: {command.description}")
+    print("Bot synced with server")
+    await ctx.send("Synced")
 
 @bot.command(name="sleep", description="Shuts down the bot")
 @has_permissions(administrator=True)
 async def regular_command(ctx: commands.Context):
     await ctx.reply("Shutting down...")
+    print("Command: Shutting down")
     await bot.close()
+
+@bot.event
+async def on_disconnect():
+    # Close the aiohttp session when the bot disconnects
+    connector = bot.http.connector
+    if connector:
+        await connector.close()
+        print("Closed aiohttp connector.")
 
 #################### SLASH - ADMIN - COMMANDS ####################
 @bot.tree.command(name="empty_region_file", description="Empty the JSON file of a region")
@@ -56,16 +65,20 @@ async def help_noslash(ctx):
         color=0xeda7c8
     )
     embed.add_field(
-        name="Admin",
-        value="!sync: used one time when adding the bot to the server, necessary to make slash commands work."
+        name="Sync",
+        value="Used one time when adding the bot to the server, necessary to make slash commands work. You **must** use the '!' prefix with it."
     )
     embed.add_field(
-        name="NationStates - Verify",
-        value="verify: verify if you are the owner of the specified nation\nverify_auto: same command as the above but for regions with an autorole system linked to a user's nationstates nation."
+        name="Verify",
+        value="Verify if you are the owner of the specified nation"
     )
     embed.add_field(
-        name="NationStates - Elections",
-        value="stv_calculate: calculate the results of an election using the single transferrable vote system, requires a [TBD] in input."
+        name="Verify_auto",
+        value="Same command as /verify but for regions with an autorole system linked to a user's nationstates nation."
+    )
+    embed.add_field(
+        name="Stv_calculate",
+        value="Calculate the results of an election using the single transferrable vote system, requires a [TBD] in input."
     )
     embed.set_footer(text="Bot made by @Altys")
     await ctx.reply(embed=embed)
@@ -79,16 +92,20 @@ async def help(ctx):
         color=0xeda7c8
     )
     embed.add_field(
-        name="Admin",
-        value="!sync: used one time when adding the bot to the server, necessary to make slash commands work."
+        name="Sync",
+        value="Used one time when adding the bot to the server, necessary to make slash commands work. You **must** use the '!' prefix with it."
     )
     embed.add_field(
-        name="NationStates - Verify",
-        value="verify: verify if you are the owner of the specified nation\nverify_auto: same command as the above but for regions with an autorole system linked to a user's nationstates nation."
+        name="Verify",
+        value="Verify if you are the owner of the specified nation"
     )
     embed.add_field(
-        name="NationStates - Elections",
-        value="stv_calculate: calculate the results of an election using the single transferrable vote system, requires a [TBD] in input."
+        name="Verify_auto",
+        value="Same command as /verify but for regions with an autorole system linked to a user's nationstates nation."
+    )
+    embed.add_field(
+        name="Stv_calculate",
+        value="Calculate the results of an election using the single transferrable vote system, requires a [TBD] in input."
     )
     embed.set_footer(text="Bot made by @Altys")
     await ctx.response.send_message(embed=embed)
@@ -125,6 +142,39 @@ async def verify_auto(interaction, nation: str):
         await user.send("Not verified")
 
     print("done")
+
+@bot.tree.command(name="checkup", description="Updates the list of nations in a region")
+@has_permissions(administrator=True)
+async def checkup(ctx, region: str):
+    removed_nations, removed_count = nsverify.checkup(region)
+    await ctx.response.send_message(f"Removed {removed_count} nations: {removed_nations}")
+    await ctx.response.send_message(f"Updating the amount of people holding the role for {region}...")
+
+    server = ctx.guild
+    role = discord.utils.get(server.roles, name=region)
+    superregion = nsverify.get_superregion(region)
+
+    if superregion is not None:
+        filepath = f"/home/thibault/delivery/INN/Leman/Regions/{superregion}/{region}.json"
+    else:
+        filepath = f"/home/thibault/delivery/INN/Leman/Regions/{region}.json"
+
+    try:
+        with open(filepath, "r") as json_file:
+            nations_list = json.load(json_file)
+    except (FileNotFoundError, json.decoder.JSONDecodeError):
+        nations_list = {}
+
+    members_with_role = [member.id for member in ctx.guild.members if role in member.roles]
+
+    for member_id in members_with_role:
+        if str(member_id) not in nations_list:
+            member = ctx.guild.get_member(member_id)
+            if member:
+                await member.remove_roles(role)
+                print(f"Removed role '{role.name}' from user {member}")
+
+    await ctx.response.send_message(f"Update completed.")
 
 #################### SLASH - Government - COMMANDS ####################
 @bot.tree.command(name="stv_calculate", description="Calculate the results of an STV election")
