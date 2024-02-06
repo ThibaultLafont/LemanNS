@@ -4,6 +4,7 @@ import os
 import json
 import aiohttp
 import backuping
+import welcoming
 from discord.ext import commands
 from discord.ext.commands import has_permissions
 from discord.ext.commands import has_role
@@ -201,6 +202,17 @@ async def stv_calculate(ctx, election: str):
         await ctx.response.send_message("Calculating...")
     else:
         await ctx.response.send_message("You do not have the required role")
+
+#################### SLASH - Welcome - COMMANDS ####################
+@bot.tree.command(name="welcome", description="Generate your region's welcome message")
+async def welcome(ctx, region: str):
+    message = welcoming.fetch_new_nations(region)
+    if message:
+        
+        await ctx.response.send_message(message)
+    else:
+        await ctx.response.send_message("No new nations to welcome!")
+        print("Error: Empty message")
 
 # @bot.tree.command(name="update_govt_overview", description="Update the government overview")
 # async def update_govt_overview(ctx, prime_minister: str, world_assembly_delegate: str, domestic_affairs_minister: str, foreign_affairs_minister: str, legal_affairs_minister: str, cultural_affairs_minister: str, defence_minister: str, secretary_of_integration: str, secretary_of_gameside: str, secretary_of_media: str, secretary_of_roleplay: str, deputy_prime_minister: str, vice_delegate: str, deputy_domestic_affairs_minister: str, deputy_foreign_affairs_minister: str, deputy_legal_affairs_minister: str, deputy_cultural_affairs_minister: str, deputy_defence_minister: str):
