@@ -3,6 +3,7 @@ import discord
 import os
 import json
 import aiohttp
+import backuping
 from discord.ext import commands
 from discord.ext.commands import has_permissions
 from discord.ext.commands import has_role
@@ -40,6 +41,12 @@ async def regular_command(ctx: commands.Context):
     await ctx.reply("Shutting down...")
     print("Command: Shutting down")
     await bot.close()
+
+@bot.command(name="backup", description="Backup the JSON files")
+@is_owner()
+async def regular_command(ctx: commands.Context):
+    backuping.backup()
+    await ctx.reply("Backup done")
 
 @bot.event
 async def on_disconnect():
