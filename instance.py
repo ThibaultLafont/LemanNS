@@ -121,27 +121,36 @@ async def verify(ctx, nation: str, key: str):
 @bot.tree.command(name="verify_auto", description="Verify your nation to automatically get roled in the server")
 async def verify_auto(interaction, nation: str):
     user = interaction.user  # Get the discord.User object from the interaction
-    await interaction.response.send_message("I have sent you a DM! If you have not received any, make sure you have enabled DMs from server members.")
-
-    await user.send("Please enter your nation verification key which can be found here: https://www.nationstates.net/page=verify_login")
-    key = await bot.wait_for('message', check=lambda message: message.author == user and isinstance(message.channel, discord.DMChannel))
-
-    if key.content == "cancel":
-        await user.send("Cancelled")
-        return
-    print(f"nation:{nation} key:{key.content} are being tested")
-
-    if nsverify.verify_nation(nation, key.content):
-        await user.send("Verified")
-        region = nsverify.nation_in_region(user, nation, None)
-        server = interaction.guild  # Assuming you have the server (guild) available
-        role = discord.utils.get(server.roles, name=region)
-        if role:
-            await interaction.user.add_roles(role)
+    if discord.utils.get(user.roles, name="Verified"):
+        await interaction.response.send_message("You are already verified on this server. Please contact a moderator if you need help.")
     else:
-        await user.send("Not verified")
+        await interaction.response.send_message("I have sent you a DM! If you have not received any, make sure you have enabled DMs from server members.")
 
-    print("done")
+        await user.send("Please enter your nation verification key which can be found here: https://www.nationstates.net/page=verify_login")
+        key = await bot.wait_for('message', check=lambda message: message.author == user and isinstance(message.channel, discord.DMChannel))
+
+        if key.content == "cancel":
+            await user.send("Cancelled")
+            return
+        print(f"nation:{nation} key:{key.content} are being tested")
+
+        if nsverify.verify_nation(nation, key.content):
+            await user.send("Verified")
+            region = nsverify.nation_in_region(user, nation, None)
+            server = interaction.guild  # Assuming you have the server (guild) available
+            role = discord.utils.get(server.roles, name=region)
+            if role:
+                await interaction.user.add_roles(role)
+        else:
+            await user.send("Not verified")
+
+        print("done")
+
+@bot.tree.command(name="change_nation", description="Change the nation of an already verified user")
+@has_permissions(manage_roles=True)
+async def change_nation(ctx, user: str, nation: str, region: str):
+    nsverify.change_user_nation(user, nation, region)
+    await ctx.response.send_message(f"Changed the nation of {user} to {nation}")
 
 @bot.tree.command(name="checkup", description="Updates the list of nations in a region")
 @has_permissions(administrator=True)
