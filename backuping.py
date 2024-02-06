@@ -12,6 +12,7 @@ def zip_folder(folder_path, zip_path):
                 zipf.write(file_path, arcname)
 
 def backup():
+    global i
     folder_to_zip = '/home/thibault/delivery/INN/LemanNS/Regions'
     zip_file_path = f'/home/thibault/delivery/INN/LemanNS/backup[{i}].zip'
 
