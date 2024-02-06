@@ -16,6 +16,15 @@ AA = ["Conch Kingdom", "Cape of Good Hope", "Lands End", "Dawn", "Anteria", "Nar
 ##################### EMPTY JSON FILE #####################
 
 def empty_json(region: str):
+    """
+    Create an empty JSON file for the given region, or otherwise empties an existing JSON file.
+
+    Args:
+        region (str): The name of the region.
+
+    Returns:
+        None
+    """
     superregion = None
     if region in AC:
         superregion = "AC"
@@ -154,6 +163,35 @@ def verify_nation(nation: str, key: str):
     if response[0] == "1":
         return True
     return False
+
+def change_user_nation(user: str, nation, region: str):
+    """
+    Changes the nation of a user in the JSON file.
+
+    Args:
+        user (str): The user identifier.
+        nation (str): The nation to change to.
+
+    Returns:
+        None
+    """
+    superregion = get_superregion(region)
+    if superregion is not None:
+        filepath = f"/home/thibault/delivery/INN/LemanNS/Regions/{superregion}/{region}.json"
+    else:
+        filepath = f"/home/thibault/delivery/INN/LemanNS/Regions/{region}.json"
+
+    try:
+        with open(filepath, "r") as json_file:
+            nations_list = json.load(json_file)
+    except (FileNotFoundError, json.decoder.JSONDecodeError):
+        nations_list = {}
+
+    key = str(user.id)
+    if key in nations_list:
+        nations_list[key] = nation
+        with open(filepath, "w") as json_file:
+            json.dump(nations_list, json_file)
 
 ##################### REGION VERIFICATION FUNCTIONS #####################
 def simplify_region(region: str):
