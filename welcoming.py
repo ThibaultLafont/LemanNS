@@ -91,17 +91,20 @@ def set_welcome_message(region: str, message: str):
 
     Args:
         region (str): The name of the region.
-        message (str): The welcome message.
+        message (str): The welcome message. It should contain the '[NATIONS]' operator for automated welcome message generation.
 
     Returns:
         None
     """
+    if "[NATIONS]" not in message:
+        return False
     filepath = f"/home/thibault/delivery/INN/LemanNS/Welcome/{region}.txt"
     if not os.path.exists(filepath):
         with open(filepath, "w") as file:
             file.write("")
     with open(filepath, "w") as file:
         file.write(message)
+    return True
 
 def verify_communications_authority(region: str, nation: str):
     """
@@ -123,7 +126,31 @@ def verify_communications_authority(region: str, nation: str):
         officer_nation = officer.find("NATION").text
         authority = officer.find("AUTHORITY").text
 
+        print(officer_nation)
+        print(authority)
         if officer_nation == nation and 'C' in authority:
             return True
 
     return False
+
+def create_welcome_message(region: str):
+    """
+    Creates a welcome message for the specified region.
+
+    Args:
+        region (str): The region for which to create the welcome message.
+
+    Returns:
+        str: The welcome message for the specified region, or None if there are no new nations.
+
+    """
+    with open(f"/home/thibault/delivery/INN/LemanNS/Welcome/{region}.txt") as msg_file:
+        welcome_msg = msg_file.read()
+
+    new_nations = fetch_new_nations(region)
+    if new_nations is None:
+        return None
+    else:
+        welcome_msg = welcome_msg.replace("[NATIONS]", f"{new_nations}")
+    
+    return welcome_msg

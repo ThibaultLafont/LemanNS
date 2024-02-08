@@ -218,7 +218,7 @@ async def welcome(ctx, region: str):
 @bot.tree.command(name="set_welcome_message", description="Set the welcome message for a region")
 async def set_region_welcome_message(ctx, region: str, message: str):
     try:
-        await ctx.channel.send("I will ask you in DMs to prove you are a nation holding communications authority in your region.")
+        await ctx.response.send_message("I will ask you in DMs to prove you are a nation holding communications authority in your region.")
         await ctx.user.send("Please send your nation name here")
         
         nation = await bot.wait_for('message', check=lambda m: m.author == ctx.user and isinstance(m.channel, discord.DMChannel), timeout=60)
@@ -228,19 +228,26 @@ async def set_region_welcome_message(ctx, region: str, message: str):
         key = await bot.wait_for('message', check=lambda m: m.author == ctx.user and isinstance(m.channel, discord.DMChannel), timeout=60)
         verification_key = key.content.strip()
 
-        if nsverify.verify_nation(nation_name, verification_key):
-            if welcoming.verify_communications_authority(region, nation_name):
-                await ctx.channel.send("Verified, setting the welcome message...")
-                welcoming.set_welcome_message(region, message)
-                await ctx.channel.send("Welcome message set")
-            else:
-                await ctx.channel.send(f"<@{ctx.user.id}> You are not an officer with Communications Authority, you cannot set the welcome message")
+        if nsverify.is_member(region, nation):
+            set_region_welcome_message_bis(ctx, region, message, nation_name)
+        elif nsverify.verify_nation(nation_name, verification_key):
+            set_region_welcome_message_bis(ctx, region, message, nation_name)
         else:
             await ctx.channel.send("Not verified, you cannot set the welcome message")
     
     except asyncio.TimeoutError:
         await ctx.channel.send(f"<@{ctx.user.id}> Time ran out. Please run the command again.")
 
+
+async def set_region_welcome_message_bis(ctx, region: str, message: str, nation_name: str):
+    if welcoming.verify_communications_authority(region, nation_name):
+        await ctx.channel.send("Verified, setting the welcome message...")
+        if welcoming.set_welcome_message(region, message):
+            await ctx.channel.send("Welcome message set")
+        else:
+            await ctx.channel.send("Your welcome message does not possess the '[NATIONS]' operator. Please only use this command if you wish to automate welcome message generation, not store messages.")
+    else:
+        await ctx.channel.send(f"<@{ctx.user.id}> You are not an officer with Communications Authority, you cannot set the welcome message")
 
 # @bot.tree.command(name="update_govt_overview", description="Update the government overview")
 # async def update_govt_overview(ctx, prime_minister: str, world_assembly_delegate: str, domestic_affairs_minister: str, foreign_affairs_minister: str, legal_affairs_minister: str, cultural_affairs_minister: str, defence_minister: str, secretary_of_integration: str, secretary_of_gameside: str, secretary_of_media: str, secretary_of_roleplay: str, deputy_prime_minister: str, vice_delegate: str, deputy_domestic_affairs_minister: str, deputy_foreign_affairs_minister: str, deputy_legal_affairs_minister: str, deputy_cultural_affairs_minister: str, deputy_defence_minister: str):
