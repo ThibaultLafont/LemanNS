@@ -18,5 +18,3 @@ def backup():
 
     zip_folder(folder_to_zip, zip_file_path)
     i += 1
-
-backup()

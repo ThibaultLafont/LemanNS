@@ -193,6 +193,23 @@ def change_user_nation(user: str, nation, region: str):
         with open(filepath, "w") as json_file:
             json.dump(nations_list, json_file)
 
+def is_member(region: str, nation:str):
+    superregion = get_superregion(region)
+    if superregion is not None:
+        filepath = f"/home/thibault/delivery/INN/LemanNS/Regions/{superregion}/{region}.json"
+    else:
+        filepath = f"/home/thibault/delivery/INN/LemanNS/Regions/{region}.json"
+
+    try:
+        with open(filepath, "r") as json_file:
+            nations_list = json.load(json_file)
+    except (FileNotFoundError, json.decoder.JSONDecodeError):
+        nations_list = {}
+    
+    if nation not in nations_list:
+        return False
+    return True
+
 ##################### REGION VERIFICATION FUNCTIONS #####################
 def simplify_region(region: str):
     """
