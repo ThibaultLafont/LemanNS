@@ -6,6 +6,7 @@ import json
 import aiohttp
 import backuping
 import welcoming
+import recruitment
 from discord.ext import commands
 from discord.ext.commands import has_permissions
 from discord.ext.commands import has_role
@@ -248,6 +249,36 @@ async def set_region_welcome_message_bis(ctx, region: str, message: str, nation_
             await ctx.channel.send("Your welcome message does not possess the '[NATIONS]' operator. Please only use this command if you wish to automate welcome message generation, not store messages.")
     else:
         await ctx.channel.send(f"<@{ctx.user.id}> You are not an officer with Communications Authority, you cannot set the welcome message")
+
+#################### SLASH - Recruitment - COMMANDS ####################
+@bot.tree.command(name="exclude_region", description="Exclude a region from the recruitment process")
+@has_role("Recruiter")
+async def exclude_region(ctx, your_region: str, region_to_exclude: str):
+    if recruitment.exclude_regions(your_region, region_to_exclude) == False:
+        await ctx.response.send_message(f"Excluded {region_to_exclude} from the recruitment process")
+    else:
+        await ctx.response.send_message(f"{region_to_exclude} is already excluded from the recruitment process")
+
+@bot.tree.command(name="recruit", description="Recruit new nations")
+@has_role("Recruiter")
+async def recruit(ctx, region: str):
+    new_nations = recruitment.recruit_new_nations(region, ctx.user.id)
+    new_nations_str = ""
+    if new_nations:
+        for i in range (len(new_nations)):
+            new_nations_str += new_nations[i]
+            new_nations_str += '\n\n'
+        await ctx.response.send_message(new_nations_str)
+    elif new_nations == "NOTEMPLATE":
+        await ctx.response.send_message("You did not set a telegram template. Please use the ``/set_template`` function to do so.")
+    else:
+        await ctx.response.send_message("No new nations to recruit.")
+
+@bot.tree.command(name="set_template", description="Set the telegram template for the recruitment process")
+@has_role("Recruiter")
+async def set_template(ctx, template: str):
+    recruitment.store_template(ctx.user.id, template)
+    await ctx.response.send_message("Template set")
 
 # @bot.tree.command(name="update_govt_overview", description="Update the government overview")
 # async def update_govt_overview(ctx, prime_minister: str, world_assembly_delegate: str, domestic_affairs_minister: str, foreign_affairs_minister: str, legal_affairs_minister: str, cultural_affairs_minister: str, defence_minister: str, secretary_of_integration: str, secretary_of_gameside: str, secretary_of_media: str, secretary_of_roleplay: str, deputy_prime_minister: str, vice_delegate: str, deputy_domestic_affairs_minister: str, deputy_foreign_affairs_minister: str, deputy_legal_affairs_minister: str, deputy_cultural_affairs_minister: str, deputy_defence_minister: str):
