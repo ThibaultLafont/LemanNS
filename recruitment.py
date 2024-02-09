@@ -27,7 +27,7 @@ def add_to_checks(region: str, timestamp: int):
     """
     if (region not in last_checks) or (timestamp > last_checks[region]):
         last_checks[region] = timestamp
-        with open("/home/thibault/delivery/INN/LemanNS/Welcome/last_recruitment_checks.json", "w") as json_file:
+        with open("/home/thibault/delivery/INN/LemanNS/Recruitment/last_recruitment_checks.json", "w") as json_file:
             json.dump(last_checks, json_file)
         return True
     return False
@@ -100,6 +100,7 @@ def fetch_new_to_recruit(region: str):
 
     new_nations = []
     if response.status_code == 200:
+        last_previous_check = last_checks[region]
         print(response.text)
         data = ET.fromstring(response.text)
         events = data.find("HAPPENINGS").findall("EVENT")
@@ -112,7 +113,8 @@ def fetch_new_to_recruit(region: str):
                         break
                 timestamp = int(event.find("TIMESTAMP").text)
                 add_to_checks(region, timestamp)
-                new_nations.append(event.find("TEXT").text.split(" ")[0])
+                if timestamp > last_previous_check:
+                    new_nations.append(event.find("TEXT").text.split(" ")[0])
 
         return new_nations
 
