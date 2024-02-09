@@ -7,11 +7,13 @@ import aiohttp
 import backuping
 import welcoming
 import recruitment
+import nsstats
 from discord.ext import commands
 from discord.ext.commands import has_permissions
 from discord.ext.commands import has_role
 from discord.ext.commands import is_owner
 from dotenv import load_dotenv
+import time
 
 
 #################### BOT SETUP ####################
@@ -264,7 +266,7 @@ async def exclude_region(ctx, your_region: str, region_to_exclude: str):
 async def recruit(ctx, region: str):
     new_nations = recruitment.recruit_new_nations(region, ctx.user.id)
     new_nations_str = ""
-    if new_nations:
+    if new_nations != "NOTEMPLATE":
         for i in range (len(new_nations)):
             new_nations_str += new_nations[i]
             new_nations_str += '\n\n'
@@ -274,11 +276,50 @@ async def recruit(ctx, region: str):
     else:
         await ctx.response.send_message("No new nations to recruit.")
 
+@bot.tree.command(name="recruit_session", description="Start a recruitment session for a region")
+@has_role("Recruiter")
+async def recruit_session(ctx, region: str, call_wait: int):
+    start_time = time.perf_counter()
+    await ctx.response.send_message(f"Recruitment session started for {region}.")
+    while True:
+        elapsed_time = time.perf_counter() - start_time
+        remaining_time = call_wait * 60 - elapsed_time
+
+        if elapsed_time >= call_wait * 60:
+            new_nations = recruitment.recruit_new_nations(region, ctx.user.id)
+            new_nations_str = ""
+            if new_nations != "NOTEMPLATE" and new_nations != None:
+                for i in range(len(new_nations)):
+                    new_nations_str += new_nations[i]
+                    new_nations_str += '\n\n'
+                await ctx.channel.send(new_nations_str)
+            elif new_nations == "NOTEMPLATE":
+                await ctx.channel.send("You did not set a telegram template. Please use the ``/set_template`` function to do so.")
+            else:
+                await ctx.channel.send("No new nations to recruit.")
+            start_time = time.perf_counter()
+            remaining_time = call_wait * 60
+
+        await asyncio.sleep(min(remaining_time, 1))
+
 @bot.tree.command(name="set_template", description="Set the telegram template for the recruitment process")
 @has_role("Recruiter")
 async def set_template(ctx, template: str):
     recruitment.store_template(ctx.user.id, template)
     await ctx.response.send_message("Template set")
+
+
+#################### SLASH - NSStats - COMMANDS ####################
+@bot.tree.command(name="lausanne_votes", description="Get the power of the delegates in the Lausanne Alliance")
+async def lausanne_votes(ctx):
+    await ctx.response.send_message("Getting the power of the delegates in the Lausanne Alliance...")
+    try:
+        votes = nsstats.get_lausanne_delegates_power()
+        await ctx.channel.send(votes)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        await ctx.channel.send("An error occurred, please check console logs")
+
 
 # @bot.tree.command(name="update_govt_overview", description="Update the government overview")
 # async def update_govt_overview(ctx, prime_minister: str, world_assembly_delegate: str, domestic_affairs_minister: str, foreign_affairs_minister: str, legal_affairs_minister: str, cultural_affairs_minister: str, defence_minister: str, secretary_of_integration: str, secretary_of_gameside: str, secretary_of_media: str, secretary_of_roleplay: str, deputy_prime_minister: str, vice_delegate: str, deputy_domestic_affairs_minister: str, deputy_foreign_affairs_minister: str, deputy_legal_affairs_minister: str, deputy_cultural_affairs_minister: str, deputy_defence_minister: str):
