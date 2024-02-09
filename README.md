@@ -1,3 +1,24 @@
+# Table of Contents
+
+- [Features](#features)
+- [Technologies Used](#technologies-used)
+  - [Programming Language](#programming-language)
+  - [Discord Libraries](#discord-libraries)
+  - [External Libraries](#external-libraries)
+  - [Time Handling](#time-handling)
+  - [NationStates API](#nationstates-api)
+  - [Web Requests](#web-requests)
+  - [XML Parsing](#xml-parsing)
+  - [Other](#other)
+- [Usage](#usage)
+  - [Owner/Admin Commands](#owneradmin-commands)
+  - [Regular Commands](#regular-commands)
+  - [NationStates Verify](#nationstates-verify)
+  - [Government Commands](#government-commands)
+  - [Welcome Commands](#welcome-commands)
+  - [Recruitment Commands](#recruitment-commands)
+  - [Lausanne Commands](#lausanne-commands)
+
 # Léman
 ## _Discord Bot for Nationstates_
 
