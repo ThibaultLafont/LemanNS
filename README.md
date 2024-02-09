@@ -106,3 +106,31 @@ Léamn is a Discord Bot coded in Python whose primary aim is to facilitate every
   - Description: Set the welcome message for a region.
   - Usage: `/set_welcome_message [region] [message]`
   - Note: DM interactions required for Communications Authority (in a NationStates region) verification.
+
+### Recruitment Commands
+
+- **Exclude Region**
+  - Description: Exclude a region from the recruitment process of your region.
+  - Permissions: Recruiter role
+  - Usage: `/exclude_region [your_region] [region_to_exclude]`
+
+- **Recruit**
+  - Description: Recruit new nations for your region.
+  - Permissions: Recruiter role
+  - Usage: `/recruit [region]`
+
+- **Recruit Session**
+  - Description: Start a recruitment session for a region.
+  - Permissions: Recruiter role
+  - Usage: `/recruit_session [region] [call_wait]`
+
+- **Set Template**
+  - Description: Set the telegram template for the recruitment process.
+  - Permissions: Recruiter role
+  - Usage: `/set_template [template]`
+
+### Lausanne Comands
+
+- **Lausanne Votes**
+  - Description: Get the power of the delegates in the [Second Convention of Lausanne](https://forum.theeastpacific.com/t/the-second-convention-of-lausanne/16883).
+  - Usage: `/lausanne_votes`
