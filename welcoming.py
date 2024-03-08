@@ -1,5 +1,5 @@
 import requests
-import json
+import sqlite3
 import os
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone, timedelta
@@ -8,10 +8,21 @@ headers = {
     "User-Agent": "Discord: Altys, Nation: Altys or Islonia"
 }
 
-last_checks = {}
+# Connect to SQLite database or create a new one if it doesn't exist
+db_path = "/home/thibault/delivery/INN/LemanNS/Welcome/last_checks.sqlite"
+conn = sqlite3.connect(db_path)
+cursor = conn.cursor()
 
-with open("/home/thibault/delivery/INN/LemanNS/Welcome/last_checks.json", "r") as json_file:
-    last_checks = json.load(json_file)
+# Create the table if it doesn't exist
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS last_checks (
+        region TEXT PRIMARY KEY,
+        timestamp INTEGER
+    )
+''')
+
+# Fetch existing last checks from the database
+last_checks = dict(cursor.execute('SELECT * FROM last_checks').fetchall())
 
 ##################### FETCH NEW NATIONS #####################
 
@@ -28,8 +39,8 @@ def add_to_checks(region: str, timestamp: int):
     """
     if (region not in last_checks) or (timestamp > last_checks[region]):
         last_checks[region] = timestamp
-        with open("/home/thibault/delivery/INN/LemanNS/Welcome/last_checks.json", "w") as json_file:
-            json.dump(last_checks, json_file)
+        cursor.execute('INSERT OR REPLACE INTO last_checks (region, timestamp) VALUES (?, ?)', (region, timestamp))
+        conn.commit()
         return True
     return False
 
@@ -48,21 +59,25 @@ def fetch_new_nations(region: str):
     """
     new_nations = []
     if region not in last_checks:
+        print("region was not in last_checks")
         last_checks[region] = int(datetime.now(timezone.utc).timestamp()) - 86400
-        with open("/home/thibault/delivery/INN/LemanNS/Welcome/last_checks.json", "w") as json_file:
-            json.dump(last_checks, json_file)
+        cursor.execute('INSERT OR REPLACE INTO last_checks (region, timestamp) VALUES (?, ?)', (region, last_checks[region]))
+        conn.commit()
+
     url = f"https://www.nationstates.net/cgi-bin/api.cgi?region={region}&q=happenings;filter=move;sinceid={last_checks[region]};"
     response = requests.get(url, headers=headers)
 
     if response.status_code == 200:
         print(response.text)
+        last_previous_check = last_checks[region]
         data = ET.fromstring(response.text)
         events = data.find("HAPPENINGS").findall("EVENT")
 
         for event in events:
-            if event.find("TEXT").text.__contains__("arrived from") or event.find("TEXT").text.__contains__("was founded in"):
+            if "arrived from" in event.find("TEXT").text or "was founded" in event.find("TEXT").text:
                 timestamp = int(event.find("TIMESTAMP").text)
-                if add_to_checks(region, timestamp):
+                add_to_checks(region, timestamp)
+                if int(event.find("TIMESTAMP").text) > last_previous_check:
                     new_nations.append(event.find("TEXT").text.split(" ")[0])
 
         for nation in new_nations:
@@ -76,12 +91,12 @@ def fetch_new_nations(region: str):
         return None
 
 def format_new_nations(nations: list):
-    format = ""
+    formatted_str = ""
     for nation in nations:
         nation = nation.replace("@@", "")
-        format += f"[nation]{nation}[/nation],"
-    format = format[:-1]
-    return format
+        formatted_str += f"[nation]{nation}[/nation],"
+    formatted_str = formatted_str[:-1]
+    return formatted_str
 
 ##################### WELCOME MESSAGE FUNCTIONS #####################
 
@@ -122,6 +137,7 @@ def verify_communications_authority(region: str, nation: str):
     data = ET.fromstring(response.text)
     officers = data.find("OFFICERS").findall("OFFICER")
 
+    nation = nation.lower()
     for officer in officers:
         officer_nation = officer.find("NATION").text
         authority = officer.find("AUTHORITY").text
@@ -148,7 +164,7 @@ def create_welcome_message(region: str):
         welcome_msg = msg_file.read()
 
     new_nations = fetch_new_nations(region)
-    if new_nations is None:
+    if new_nations is None or not new_nations:
         return None
     else:
         welcome_msg = welcome_msg.replace("[NATIONS]", f"{new_nations}")
