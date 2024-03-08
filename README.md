@@ -78,12 +78,12 @@ Léamn is a Discord Bot coded in Python whose primary aim is to facilitate every
   - Usage: `!sleep`
 
 - **Backup**
-  - Description: Backup the JSON files.
+  - Description: Backup the SQLite databases.
   - Owner Only
   - Usage: `!backup`
 
 - **Empty Region File**
-  - Description: Empty the JSON file of a region.
+  - Description: Empty the SQLite database of a region.
   - Owner Only
   - Usage: `/empty_region_file [region]`
 
