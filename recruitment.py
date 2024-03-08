@@ -1,5 +1,5 @@
 import requests
-import json
+import sqlite3
 import os
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone, timedelta
@@ -9,8 +9,34 @@ headers = {
     "User-Agent": "Discord: Altys, Nation: Altys or Islonia"
 }
 
-with open("/home/thibault/delivery/INN/LemanNS/Recruitment/last_recruitment_checks.json", "r") as json_file:
-    last_checks = json.load(json_file)
+db_path = "/home/thibault/delivery/INN/LemanNS/Recruitment/last_recruitment_checks.sqlite"
+conn = sqlite3.connect(db_path)
+cursor = conn.cursor()
+
+# Create the tables if they don't exist
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS last_recruitment_checks (
+        region TEXT PRIMARY KEY,
+        timestamp INTEGER
+    )
+''')
+
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS templates (
+        uid INTEGER PRIMARY KEY,
+        template TEXT
+    )
+''')
+
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS excluded_regions (
+        region TEXT PRIMARY KEY,
+        to_exclude TEXT
+    )
+''')
+
+# Fetch existing last recruitment checks from the database
+last_checks = dict(cursor.execute('SELECT * FROM last_recruitment_checks').fetchall())
 
 ##################### INCREMENT TIMESTAMP CHECKS #####################
 
@@ -27,14 +53,13 @@ def add_to_checks(region: str, timestamp: int):
     """
     if (region not in last_checks) or (timestamp > last_checks[region]):
         last_checks[region] = timestamp
-        with open("/home/thibault/delivery/INN/LemanNS/Recruitment/last_recruitment_checks.json", "w") as json_file:
-            json.dump(last_checks, json_file)
+        # Update the SQLite database
+        cursor.execute('INSERT OR REPLACE INTO last_recruitment_checks (region, timestamp) VALUES (?, ?)', (region, timestamp))
+        conn.commit()
         return True
     return False
 
 ##################### EXCLUDE FOUND TARGETS #####################
-
-import os
 
 def exclude_regions(region: str, to_exclude: str):
     """
@@ -49,24 +74,11 @@ def exclude_regions(region: str, to_exclude: str):
     region = region.replace(" ", "_")
     region = region.lower()
 
-    file_path = f"/home/thibault/delivery/INN/LemanNS/Recruitment/Excluded/{region}.json"
-
-    if os.path.exists(file_path):
-        with open(file_path, "r") as json_file:
-            excluded_regions = json.load(json_file)
-    else:
-        excluded_regions = []
-
-    if to_exclude in excluded_regions:
-        return True
-
-    excluded_regions.append(to_exclude)
-
-    with open(file_path, "w") as json_file:
-        json.dump(excluded_regions, json_file)
+    # Update the SQLite database
+    cursor.execute('INSERT OR IGNORE INTO excluded_regions (region, to_exclude) VALUES (?, ?)', (region, to_exclude))
+    conn.commit()
 
     return False
-
 
 ##################### FETCH NEW NATIONS #####################
 
@@ -76,6 +88,7 @@ def retrieve_excluded_regions(region: str):
 
     Args:
         region (str): The name of the region.
+        cursor: SQLite cursor object.
 
     Returns:
         list: A list of excluded regions.
@@ -83,19 +96,24 @@ def retrieve_excluded_regions(region: str):
     region = region.replace(" ", "_")
     region = region.lower()
 
-    file_path = f"/home/thibault/delivery/INN/LemanNS/Recruitment/Excluded/{region}.json"
+    try:
+        excluded_regions = [row[0] for row in cursor.execute('SELECT to_exclude FROM excluded_regions WHERE region = ?', (region,)).fetchall()]
+        return excluded_regions
+    except sqlite3.OperationalError:
+        print(f"Error: The region {region} does not exist in the database.")
+        return []
 
-    if os.path.exists(file_path):
-        with open(file_path, "r") as json_file:
-            excluded_regions = json.load(json_file)
-    else:
-        excluded_regions = []
-
-    return excluded_regions
 
 def fetch_new_to_recruit(region: str):
-    timestamp = last_checks[region]
-    url=f"https://www.nationstates.net/cgi-bin/api.cgi?q=happenings;filter=founding;sincetime={timestamp}"
+    try:
+        timestamp = last_checks[region]
+    except KeyError:
+        print("Region not found in last_checks")
+        timestamp = int(datetime.now(timezone.utc).timestamp()) - 86400
+        cursor.execute('INSERT INTO last_recruitment_checks (region, timestamp) VALUES (?, ?)', (region, timestamp))
+        conn.commit()
+
+    url = f"https://www.nationstates.net/cgi-bin/api.cgi?q=happenings;filter=founding;sincetime={timestamp}"
     response = requests.get(url, headers=headers)
 
     new_nations = []
@@ -107,14 +125,16 @@ def fetch_new_to_recruit(region: str):
         excluded_regions = retrieve_excluded_regions(region)
 
         for event in events:
-            if event.find("TEXT").text.__contains__("was founded in"):
+            if "was founded in" in event.find("TEXT").text:
                 for excluded in excluded_regions:
-                    if event.find("TEXT").text.__contains__(excluded):
+                    if excluded in event.find("TEXT").text:
                         break
-                timestamp = int(event.find("TIMESTAMP").text)
-                add_to_checks(region, timestamp)
-                if timestamp > last_previous_check:
-                    new_nations.append(event.find("TEXT").text.split(" ")[0])
+                else:
+                    timestamp = int(event.find("TIMESTAMP").text)
+                    print("timestamp:", timestamp)
+                    add_to_checks(region, timestamp)
+                    if timestamp > last_previous_check:
+                        new_nations.append(event.find("TEXT").text.split(" ")[0])
 
         return new_nations
 
@@ -169,59 +189,45 @@ def recruit_new_nations(region: str, uid: int):
     Returns:
         str: The formatted telegrams for the new nations, or "NOTEMPLATE" if no template is found. Will also return None if no new nations are found.
     """
-    file_path = f"/home/thibault/delivery/INN/LemanNS/Recruitment/template.json"
-
-    if os.path.exists(file_path):
-        with open(file_path, "r") as json_file:
-            templates = json.load(json_file)
-    else:
-        templates = {}
-    if templates[str(uid)] is None:
+    # Fetch the template from the database
+    template = cursor.execute('SELECT template FROM templates WHERE uid = ?', (uid,)).fetchone()
+    if template is None:
         return "NOTEMPLATE"
+    template = template[0]
+    
     new_nations = fetch_new_to_recruit(region)
     if new_nations is None:
-        return
-    new_nations = format_telegrams(new_nations, templates[str(uid)])
-    return new_nations
+        return None
+    if not new_nations:
+        return None
+
+    formatted_telegrams = format_telegrams(new_nations, template)
+    return formatted_telegrams
 
 def format_new_nations(nations: list):
-    format = ""
+    formatted_str = ""
     for nation in nations:
         nation = nation.replace("@@", "")
-        format += f"[nation]{nation}[/nation],"
-    format = format[:-1]
-    return format
+        formatted_str += f"[nation]{nation}[/nation],"
+    formatted_str = formatted_str[:-1]
+    return formatted_str
 
 ##################### TELEGRAM TEMPLATES FUNCTION #####################
 
-import os
-import json
-from json.decoder import JSONDecodeError
-
-def store_template(template: str, uid: int):
+def store_template(template: str, uid: str):
     """
     Stores a telegram template for a user.
 
     Args:
         template (str): The template to store.
-        uid (int): The user ID.
-
-    Returns:
-        None
+        uid (str): The user ID.
     """
-    file_path = f"/home/thibault/delivery/INN/LemanNS/Recruitment/template.json"
+    # Explicitly convert template to string if needed
+    template_str = str(template)
+    int_uid = int(uid)
 
-    try:
-        if os.path.exists(file_path):
-            with open(file_path, "r") as json_file:
-                templates = json.load(json_file)
-        else:
-            templates = {}
-    except JSONDecodeError:
-        templates = {}
+    print(f'Type of uid: {type(uid)}')
+    print(f'Type of template_str: {type(template_str)}')
 
-    reversed_templates = {v: k for k, v in templates.items()}
-    reversed_templates[template] = uid
-
-    with open(file_path, "w") as json_file:
-        json.dump(reversed_templates, json_file)
+    cursor.execute('INSERT OR REPLACE INTO templates (uid, template) VALUES (?, ?)', (int_uid, template_str))
+    conn.commit()
