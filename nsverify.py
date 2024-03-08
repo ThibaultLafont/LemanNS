@@ -1,6 +1,7 @@
 import requests
 import time
 import json
+import sqlite3
 import xml.etree.ElementTree as ET
 
 headers = {
@@ -12,6 +13,8 @@ SUPERREGIONS = ["Alstroemerian Commonwealths", "The Free Nations Federation", "A
 AC = ["Japan", "Alstroemeria", "The Glorious Nations of Iwaku", "Eientei Gensokyo", "Yggdrasil", "Hetalia", "Slavija"]
 FNF = ["The Free Nations Region", "Hive", "Equiterra"]
 AA = ["Conch Kingdom", "Cape of Good Hope", "Lands End", "Dawn", "Anteria", "Narnia", "Ridgefield"]
+
+db_path = "./Regions/Regions.sqlite"
 
 ##################### EMPTY JSON FILE #####################
 
@@ -74,15 +77,21 @@ def nation_json(user: str, nation: str, region:str, superregion: str):
     Returns:
         None
     """
-    if superregion is not None:
-        filepath = f"/home/thibault/delivery/INN/LemanNS/Regions/{superregion}/{region}.json"
-    else:
-        filepath = f"/home/thibault/delivery/INN/LemanNS/Regions/{region}.json"
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute(f'''CREATE TABLE IF NOT EXISTS {region} (
+        nation TEXT PRIMARY KEY,
+        discordid INTEGER
+        )
+    ''')
+
     try:
-        with open(filepath, "r") as json_file:
-            nations_list = json.load(json_file)
-    except (FileNotFoundError, json.decoder.JSONDecodeError):
+        cursor.execute(f"SELECT * FROM {region}")
+        rows = cursor.fetchall()
+        nations_list = {row[0]: row[1] for row in rows}
+    except sqlite3.Error:
         nations_list = {}
+
     key = str(user.id)
     if key in nations_list:
         print(f"User '{user}' already exists in the list.")
@@ -90,9 +99,10 @@ def nation_json(user: str, nation: str, region:str, superregion: str):
     if nation in nations_list.values():
         print(f"Nation '{nation}' already exists in the list.")
         return
-    nations_list[key] = nation
-    with open(filepath, "w") as json_file:
-        json.dump(nations_list, json_file)
+
+    cursor.execute(f"INSERT INTO {region} (nation, discordid) VALUES (?, ?)", (nation, key))
+    conn.commit()
+
 
 def region_checkup(region: str):
     """
@@ -108,16 +118,14 @@ def region_checkup(region: str):
     i = 0
     removed_nations = []
     removed_count = 0
-    superregion = get_superregion(region)
-    if superregion is not None:
-        filepath = f"/home/thibault/delivery/INN/LemanNS/Regions/{superregion}/{region}.json"
-    else:
-        filepath = f"/home/thibault/delivery/INN/LemanNS/Regions/{region}.json"
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
 
     try:
-        with open(filepath, "r") as json_file:
-            nations_list = json.load(json_file)
-    except (FileNotFoundError, json.decoder.JSONDecodeError):
+        cursor.execute(f"SELECT * FROM {region}")
+        rows = cursor.fetchall()
+        nations_list = {row[0]: row[1] for row in rows}
+    except sqlite3.Error:
         nations_list = {}
 
     for key in nations_list:
@@ -138,11 +146,12 @@ def region_checkup(region: str):
             i = 0
             time.sleep(30)
 
-        with open(filepath, "w") as json_file:
-            json.dump(nations_list, json_file)
+    for nation in removed_nations:
+        cursor.execute(f"DELETE FROM {region} WHERE nation = ?", (nation,))
+        conn.commit()
 
-        print("removed nations == ", removed_nations)
-        return removed_nations, removed_count
+    print("removed nations == ", removed_nations)
+    return removed_nations, removed_count
 
 ##################### NATION VERIFICATION FUNCTIONS #####################
 def verify_nation(nation: str, key: str):
@@ -175,35 +184,49 @@ def change_user_nation(user: str, nation, region: str):
     Returns:
         None
     """
-    superregion = get_superregion(region)
-    if superregion is not None:
-        filepath = f"/home/thibault/delivery/INN/LemanNS/Regions/{superregion}/{region}.json"
-    else:
-        filepath = f"/home/thibault/delivery/INN/LemanNS/Regions/{region}.json"
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute(f'''CREATE TABLE IF NOT EXISTS {region} (
+        nation TEXT PRIMARY KEY,
+        discordid INTEGER
+        )
+    ''')
 
     try:
-        with open(filepath, "r") as json_file:
-            nations_list = json.load(json_file)
-    except (FileNotFoundError, json.decoder.JSONDecodeError):
-        nations_list = {}
+        cursor.execute(f"SELECT * FROM {region}")
+        rows = cursor.fetchall()
+    except sqlite3.Error:
+        return False
 
     key = str(user.id)
-    if key in nations_list:
-        nations_list[key] = nation
-        with open(filepath, "w") as json_file:
-            json.dump(nations_list, json_file)
+    cursor.execute(f"INSERT INTO {region} (nation, discordid) VALUES (?, ?)", (nation, key))
+    conn.commit()
+    return True
 
 def is_member(region: str, nation:str):
-    superregion = get_superregion(region)
-    if superregion is not None:
-        filepath = f"/home/thibault/delivery/INN/LemanNS/Regions/{superregion}/{region}.json"
-    else:
-        filepath = f"/home/thibault/delivery/INN/LemanNS/Regions/{region}.json"
+    """
+    Check if a nation is a member of a region.
+
+    Args:
+        region (str): The name of the region.
+        nation (str): The name of the nation.
+
+    Returns:
+        bool: True if the nation is a member of the region, False otherwise.
+    """
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute(f'''CREATE TABLE IF NOT EXISTS {region} (
+        nation TEXT PRIMARY KEY,
+        discordid INTEGER
+        )
+    ''')
 
     try:
-        with open(filepath, "r") as json_file:
-            nations_list = json.load(json_file)
-    except (FileNotFoundError, json.decoder.JSONDecodeError):
+        cursor.execute(f"SELECT * FROM {region}")
+        rows = cursor.fetchall()
+        nations_list = {row[0]: row[1] for row in rows}
+    except sqlite3.Error:
         nations_list = {}
     
     if nation not in nations_list:
