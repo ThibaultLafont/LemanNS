@@ -57,6 +57,9 @@ Léamn is a Discord Bot coded in Python whose primary aim is to facilitate every
 ### XML Parsing
 - [xml.etree.ElementTree](https://docs.python.org/3/library/xml.etree.elementtree.html) - Python's built-in library for parsing XML, which is the format NationStates' API responses use.
 
+### SQLite Database
+- [sqlite3](https://docs.python.org/3/library/sqlite3.html) - Python's built-in library for interacting with SQLite databases.
+
 ### Other
 - [asyncio](https://docs.python.org/3/library/asyncio.html) - For handling asynchronous code, necessary when coding bots in Python.
 
