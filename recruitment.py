@@ -9,7 +9,7 @@ headers = {
     "User-Agent": "Discord: Altys, Nation: Altys or Islonia"
 }
 
-db_path = "/home/thibault/delivery/INN/LemanNS/Recruitment/last_recruitment_checks.sqlite"
+db_path = "./Recruitment/last_recruitment_checks.sqlite"
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 

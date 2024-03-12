@@ -9,7 +9,7 @@ headers = {
 }
 
 # Connect to SQLite database or create a new one if it doesn't exist
-db_path = "/home/thibault/delivery/INN/LemanNS/Welcome/last_checks.sqlite"
+db_path = "./Welcome/last_checks.sqlite"
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
@@ -160,7 +160,7 @@ def create_welcome_message(region: str):
         str: The welcome message for the specified region, or None if there are no new nations.
 
     """
-    with open(f"/home/thibault/delivery/INN/LemanNS/Welcome/{region}.txt") as msg_file:
+    with open(f"./Welcome/{region}.txt") as msg_file:
         welcome_msg = msg_file.read()
 
     new_nations = fetch_new_nations(region)
