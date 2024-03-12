@@ -2,7 +2,7 @@ import asyncio
 import nsverify
 import discord
 import os
-import json
+import sqlite3
 import aiohttp
 import backuping
 import welcoming
@@ -44,10 +44,11 @@ async def regular_command(ctx: commands.Context):
     print("Command: Shutting down")
     await bot.close()
 
-@bot.command(name="backup", description="Backup the JSON files")
-async def regular_command(ctx: commands.Context):
-    backuping.backup()
-    await ctx.reply("Backup done")
+# Temp deprecated following move to sqlite3 databases
+# @bot.command(name="backup", description="Backup the JSON files")
+# async def regular_command(ctx: commands.Context):
+#     backuping.backup()
+#     await ctx.reply("Backup done")
 
 @bot.event
 async def on_disconnect():
@@ -58,10 +59,11 @@ async def on_disconnect():
         print("Closed aiohttp connector.")
 
 #################### SLASH - ADMIN - COMMANDS ####################
-@bot.tree.command(name="empty_region_file", description="Empty the JSON file of a region")
-async def empty_region_file(ctx, region: str):
-    nsverify.empty_json(region)
-    await ctx.response.send_message(f"Emptied the JSON file of {region}")
+# Temp deprecated following move to sqlite3 databases
+# @bot.tree.command(name="empty_region_file", description="Empty the JSON file of a region")
+# async def empty_region_file(ctx, region: str):
+#     nsverify.empty_json(region)
+#     await ctx.response.send_message(f"Emptied the JSON file of {region}")
 
 #################### REGULAR - HELP - COMMANDS ####################
 @bot.command(name="help_noslash", description="Get help")
@@ -165,18 +167,21 @@ async def checkup(ctx, region: str):
 
     server = ctx.guild
     role = discord.utils.get(server.roles, name=region)
-    superregion = nsverify.get_superregion(region)
-
-    if superregion is not None:
-        filepath = f"/home/thibault/delivery/INN/LemanNS/Regions/{superregion}/{region}.json"
-    else:
-        filepath = f"/home/thibault/delivery/INN/LemanNS/Regions/{region}.json"
+    db_path = "./Regions/Regions.sqlite"
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
 
     try:
-        with open(filepath, "r") as json_file:
-            nations_list = json.load(json_file)
-    except (FileNotFoundError, json.decoder.JSONDecodeError):
+        c.execute("SELECT nations_list FROM regions WHERE region = ?", (region,))
+        result = c.fetchone()
+        if result:
+            nations_list = result[0]
+        else:
+            nations_list = {}
+    except sqlite3.Error:
         nations_list = {}
+    finally:
+        conn.close()
 
     members_with_role = [member.id for member in ctx.guild.members if role in member.roles]
 
