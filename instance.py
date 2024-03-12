@@ -9,9 +9,8 @@ import welcoming
 import recruitment
 import nsstats
 from discord.ext import commands
-from discord.ext.commands import has_permissions
-from discord.ext.commands import has_role
-from discord.ext.commands import is_owner
+from discord.ext.commands import has_permissions, has_role, is_owner
+from discord.ui import Button, View
 from dotenv import load_dotenv
 import time
 
@@ -33,7 +32,6 @@ bot = Bot(intents=intents)
 
 #################### REGULAR - ADMIN - COMMANDS ####################
 @bot.command(name="sync", description="syncs the server with the bot's slash commands")
-@has_permissions(administrator=True)
 async def regular_command(ctx: commands.Context):
     await ctx.reply("Syncing...")
     await bot.tree.sync()
@@ -41,14 +39,12 @@ async def regular_command(ctx: commands.Context):
     await ctx.send("Synced")
 
 @bot.command(name="sleep", description="Shuts down the bot")
-@has_permissions(administrator=True)
 async def regular_command(ctx: commands.Context):
     await ctx.reply("Shutting down...")
     print("Command: Shutting down")
     await bot.close()
 
 @bot.command(name="backup", description="Backup the JSON files")
-@is_owner()
 async def regular_command(ctx: commands.Context):
     backuping.backup()
     await ctx.reply("Backup done")
@@ -63,7 +59,6 @@ async def on_disconnect():
 
 #################### SLASH - ADMIN - COMMANDS ####################
 @bot.tree.command(name="empty_region_file", description="Empty the JSON file of a region")
-@is_owner()
 async def empty_region_file(ctx, region: str):
     nsverify.empty_json(region)
     await ctx.response.send_message(f"Emptied the JSON file of {region}")
@@ -159,13 +154,11 @@ async def verify_auto(interaction, nation: str):
         print("done")
 
 @bot.tree.command(name="change_nation", description="Change the nation of an already verified user")
-@has_permissions(manage_roles=True)
 async def change_nation(ctx, user: str, nation: str, region: str):
     nsverify.change_user_nation(user, nation, region)
     await ctx.response.send_message(f"Changed the nation of {user} to {nation}")
 
 @bot.tree.command(name="checkup", description="Updates the list of nations in a region")
-@has_permissions(administrator=True)
 async def checkup(ctx, region: str):
     removed_nations, removed_count = nsverify.region_checkup(region)
     message = f"Removed {removed_count} nations: {removed_nations}\n"
@@ -199,7 +192,6 @@ async def checkup(ctx, region: str):
 
 #################### SLASH - Government - COMMANDS ####################
 @bot.tree.command(name="stv_calculate", description="Calculate the results of an STV election")
-@has_role(605880071936278568)
 async def stv_calculate(ctx, election: str):
     member = ctx.user # Use ctx.user to get the user who triggered the interaction
     if ctx.guild.get_role(605880071936278568) in member.roles:
@@ -210,9 +202,8 @@ async def stv_calculate(ctx, election: str):
 #################### SLASH - Welcome - COMMANDS ####################
 @bot.tree.command(name="welcome", description="Generate your region's welcome message")
 async def welcome(ctx, region: str):
-    message = welcoming.fetch_new_nations(region)
+    message = welcoming.create_welcome_message(region)
     if message:
-
         await ctx.response.send_message(message)
     else:
         await ctx.response.send_message("No new nations to welcome!")
@@ -232,9 +223,9 @@ async def set_region_welcome_message(ctx, region: str, message: str):
         verification_key = key.content.strip()
 
         if nsverify.is_member(region, nation):
-            set_region_welcome_message_bis(ctx, region, message, nation_name)
+            await set_region_welcome_message_bis(ctx, region, message, nation_name)
         elif nsverify.verify_nation(nation_name, verification_key):
-            set_region_welcome_message_bis(ctx, region, message, nation_name)
+            await set_region_welcome_message_bis(ctx, region, message, nation_name)
         else:
             await ctx.channel.send("Not verified, you cannot set the welcome message")
     
@@ -254,7 +245,6 @@ async def set_region_welcome_message_bis(ctx, region: str, message: str, nation_
 
 #################### SLASH - Recruitment - COMMANDS ####################
 @bot.tree.command(name="exclude_region", description="Exclude a region from the recruitment process")
-@has_role("Recruiter")
 async def exclude_region(ctx, your_region: str, region_to_exclude: str):
     if recruitment.exclude_regions(your_region, region_to_exclude) == False:
         await ctx.response.send_message(f"Excluded {region_to_exclude} from the recruitment process")
@@ -262,14 +252,19 @@ async def exclude_region(ctx, your_region: str, region_to_exclude: str):
         await ctx.response.send_message(f"{region_to_exclude} is already excluded from the recruitment process")
 
 @bot.tree.command(name="recruit", description="Recruit new nations")
-@has_role("Recruiter")
 async def recruit(ctx, region: str):
     new_nations = recruitment.recruit_new_nations(region, ctx.user.id)
     new_nations_str = ""
-    if new_nations != "NOTEMPLATE":
+    if new_nations != "NOTEMPLATE" and new_nations != None:
         for i in range (len(new_nations)):
             new_nations_str += new_nations[i]
             new_nations_str += '\n\n'
+        if len(new_nations_str) > 2000:
+            await ctx.channel.send("Too many new nations to recruit, separating into multiple messages...")
+            new_nations_list = new_nations_str.split('\n\n')
+            for i in range(len(new_nations_list)):
+                if (new_nations_list[i] != ""):
+                    await ctx.channel.send(new_nations_list[i])
         await ctx.response.send_message(new_nations_str)
     elif new_nations == "NOTEMPLATE":
         await ctx.response.send_message("You did not set a telegram template. Please use the ``/set_template`` function to do so.")
@@ -277,7 +272,6 @@ async def recruit(ctx, region: str):
         await ctx.response.send_message("No new nations to recruit.")
 
 @bot.tree.command(name="recruit_session", description="Start a recruitment session for a region")
-@has_role("Recruiter")
 async def recruit_session(ctx, region: str, call_wait: int):
     start_time = time.perf_counter()
     await ctx.response.send_message(f"Recruitment session started for {region}.")
@@ -287,11 +281,17 @@ async def recruit_session(ctx, region: str, call_wait: int):
 
         if elapsed_time >= call_wait * 60:
             new_nations = recruitment.recruit_new_nations(region, ctx.user.id)
+            print(new_nations)
             new_nations_str = ""
             if new_nations != "NOTEMPLATE" and new_nations != None:
                 for i in range(len(new_nations)):
                     new_nations_str += new_nations[i]
                     new_nations_str += '\n\n'
+                if len(new_nations_str) > 2000:
+                    await ctx.channel.send("Too many new nations to recruit, separating into multiple messages...")
+                    new_nations_list = new_nations_str.split('\n\n')
+                    for i in range(len(new_nations_list)):
+                        await ctx.channel.send(new_nations_list[i])
                 await ctx.channel.send(new_nations_str)
             elif new_nations == "NOTEMPLATE":
                 await ctx.channel.send("You did not set a telegram template. Please use the ``/set_template`` function to do so.")
@@ -303,11 +303,9 @@ async def recruit_session(ctx, region: str, call_wait: int):
         await asyncio.sleep(min(remaining_time, 1))
 
 @bot.tree.command(name="set_template", description="Set the telegram template for the recruitment process")
-@has_role("Recruiter")
 async def set_template(ctx, template: str):
-    recruitment.store_template(ctx.user.id, template)
+    recruitment.store_template(template, ctx.user.id)
     await ctx.response.send_message("Template set")
-
 
 #################### SLASH - NSStats - COMMANDS ####################
 @bot.tree.command(name="lausanne_votes", description="Get the power of the delegates in the Lausanne Alliance")
