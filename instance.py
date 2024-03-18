@@ -276,6 +276,44 @@ async def recruit(ctx, region: str):
     else:
         await ctx.response.send_message("No new nations to recruit.")
 
+class RecruitButton(discord.ui.View):
+    def __init__(self):
+        super().__init__()
+        self.result = None
+        self.enable_all_buttons()
+
+    @discord.ui.button(label="Continue", custom_id="continue", style=discord.ButtonStyle.success)
+    async def on_continue_button_click(self, interaction, button):
+        await interaction.response.send_message("Continuing...")
+        self.result = True
+        self.disable_all_buttons()
+        await interaction.message.edit(view=self)
+        self.stop()
+
+    @discord.ui.button(label="Stop", custom_id="stop", style=discord.ButtonStyle.danger)
+    async def on_stop_button_click(self, interaction, button):
+        await interaction.response.send_message("Stopping...")
+        self.result = False
+        self.disable_all_buttons()
+        await interaction.message.edit(view=self)
+        self.stop()
+
+    async def on_timeout(self):
+        self.result = False
+        self.disable_all_buttons()
+        await self.message.edit(view=self)
+        self.stop()
+
+    def disable_all_buttons(self):
+        for item in self.children:
+            if isinstance(item, discord.ui.Button):
+                item.disabled = True
+
+    def enable_all_buttons(self):
+        for item in self.children:
+            if isinstance(item, discord.ui.Button):
+                item.disabled = False
+
 @bot.tree.command(name="recruit_session", description="Start a recruitment session for a region")
 async def recruit_session(ctx, region: str, call_wait: int):
     start_time = time.perf_counter()
@@ -285,6 +323,7 @@ async def recruit_session(ctx, region: str, call_wait: int):
         remaining_time = call_wait * 60 - elapsed_time
 
         if elapsed_time >= call_wait * 60:
+            view = RecruitButton()
             new_nations = recruitment.recruit_new_nations(region, ctx.user.id)
             print(new_nations)
             new_nations_str = ""
@@ -297,13 +336,44 @@ async def recruit_session(ctx, region: str, call_wait: int):
                     new_nations_list = new_nations_str.split('\n\n')
                     for i in range(len(new_nations_list)):
                         await ctx.channel.send(new_nations_list[i])
-                await ctx.channel.send(new_nations_str)
+                        view.enable_all_buttons()
+                    await ctx.channel.send("Do you want to continue the session?", view=view)
+                    await view.wait()
+                    if view.result is False:
+                        view.result = None
+                        print("Session stopped")
+                        break
+                    elif view.result is True:
+                        view.result = None
+                        print("Session continues")
+                else:
+                    view.enable_all_buttons()
+                    await ctx.channel.send(new_nations_str, view=view)
+                    await view.wait()
+                    if view.result is False:
+                        view.result = None
+                        print("Session stopped")
+                        break
+                    elif view.result is True:
+                        view.result = None
+                        print("Session continues")
             elif new_nations == "NOTEMPLATE":
                 await ctx.channel.send("You did not set a telegram template. Please use the ``/set_template`` function to do so.")
             else:
-                await ctx.channel.send("No new nations to recruit.")
+                view.enable_all_buttons()
+                await ctx.channel.send("No new nations to recruit.", view=view)
+                await view.wait()
+                if view.result is False:
+                    view.result = None
+                    print("Session stopped")
+                    break
+                elif view.result is True:
+                    view.result = None
+                    print("Session continues")
+            print(f"view result == {view.result}")
             start_time = time.perf_counter()
             remaining_time = call_wait * 60
+            print(f"next call in {remaining_time} seconds")
 
         await asyncio.sleep(min(remaining_time, 1))
 
