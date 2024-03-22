@@ -7,6 +7,7 @@ import aiohttp
 import backuping
 import welcoming
 import recruitment
+import datetime
 import nsstats
 from discord.ext import commands
 from discord.ext.commands import has_permissions, has_role, is_owner
@@ -57,6 +58,25 @@ async def on_disconnect():
     if connector:
         await connector.close()
         print("Closed aiohttp connector.")
+
+@bot.tree.command(name="server_member_count", description="Get the number of members in the server")
+async def server_member_count(ctx):
+    await ctx.response.send_message(f"Number of members: {ctx.guild.member_count}")
+
+@bot.tree.command(name="get_message_count", description="Get the number of messages in a server after X date and before Y date")
+async def get_message_count(ctx, start_date: str, end_date: str):
+    start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d")
+    end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
+    count = 0
+    for channel in ctx.guild.text_channels:
+        print(f"channel == {channel.name}")
+        try:
+            async for message in channel.history(after=start_date, before=end_date):
+                print(f"message == {message.content}")
+                count += 1
+        except Exception as e:
+            print(f"Failed to get history for channel {channel.name} due to {str(e)}")
+    await ctx.response.send_message(f"Number of messages: {count}")
 
 #################### SLASH - ADMIN - COMMANDS ####################
 # Temp deprecated following move to sqlite3 databases
@@ -326,7 +346,7 @@ async def recruit_session(ctx, region: str, call_wait: int):
             view = RecruitButton()
             new_nations = recruitment.recruit_new_nations(region, ctx.user.id)
             print(new_nations)
-            new_nations_str = ""
+            new_nations_str = f"{ctx.user.mention}\n"
             if new_nations != "NOTEMPLATE" and new_nations != None:
                 for i in range(len(new_nations)):
                     new_nations_str += new_nations[i]
