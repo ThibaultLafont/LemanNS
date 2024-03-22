@@ -74,10 +74,14 @@ def exclude_regions(region: str, to_exclude: str):
     region = region.replace(" ", "_")
     region = region.lower()
 
-    # Update the SQLite database
-    cursor.execute('INSERT OR IGNORE INTO excluded_regions (region, to_exclude) VALUES (?, ?)', (region, to_exclude))
+    try:
+        already_excluded = cursor.execute('SELECT to_exclude FROM excluded_regions WHERE region = ?', (region,)).fetchone()
+        if already_excluded:
+            to_exclude = already_excluded[0] + "," + to_exclude
+            cursor.execute('UPDATE excluded_regions SET to_exclude = ? WHERE region = ?', (to_exclude, region))
+    except sqlite3.OperationalError:
+        cursor.execute('INSERT OR IGNORE INTO excluded_regions (region, to_exclude) VALUES (?, ?)', (region, to_exclude))
     conn.commit()
-
     return False
 
 ##################### FETCH NEW NATIONS #####################
@@ -98,6 +102,9 @@ def retrieve_excluded_regions(region: str):
 
     try:
         excluded_regions = [row[0] for row in cursor.execute('SELECT to_exclude FROM excluded_regions WHERE region = ?', (region,)).fetchall()]
+        excluded_regions = excluded_regions[0].split(",")
+        excluded_regions = [region.lower() for region in excluded_regions]
+        excluded_regions = [region.replace(" ", "_") for region in excluded_regions]
         return excluded_regions
     except sqlite3.OperationalError:
         print(f"Error: The region {region} does not exist in the database.")
