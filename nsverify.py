@@ -16,32 +16,22 @@ AA = ["Conch Kingdom", "Cape of Good Hope", "Lands End", "Dawn", "Anteria", "Nar
 
 db_path = "./Regions/Regions.sqlite"
 
-##################### EMPTY JSON FILE #####################
+##################### EMPTY DATABASE #####################
 
-def empty_json(region: str):
-    """
-    Create an empty JSON file for the given region, or otherwise empties an existing JSON file.
+# def empty_db(region: str):
+#     """
+#     Empties the database of the given region.
 
-    Args:
-        region (str): The name of the region.
+#     Args:
+#         region (str): The name of the region to empty the database of.
 
-    Returns:
-        None
-    """
-    superregion = None
-    if region in AC:
-        superregion = "AC"
-    if region in FNF:
-        superregion = "FNR"
-    if region in AA:
-        superregion = "AA"
-    if superregion is not None:
-        filepath = f"/home/thibault/delivery/INN/LemanNS/Regions/{superregion}/{region}.json"
-    else:
-        filepath = f"/home/thibault/delivery/INN/LemanNS/Regions/{region}.json"
-    empty_data = {}
-    with open(filepath, "w") as json_file:
-        json.dump(empty_data, json_file)
+#     Returns:
+#         None
+#     """
+#     conn = sqlite3.connect(db_path)
+#     cursor = conn.cursor()
+#     cursor.execute(f"DROP TABLE IF EXISTS {region}")
+#     conn.commit()
 
 ##################### USER LIST FUNCTIONS #####################
 
@@ -64,9 +54,9 @@ def get_superregion(region: str):
     return None
 
 ##################### REGION LIST FUNCTIONS #####################
-def nation_json(user: str, nation: str, region:str, superregion: str):
+def add_nation_to_database(user: str, nation: str, region:str):
     """
-    Add a nation to a JSON file based on the user, nation, region, and superregion parameters.
+    Add a nation to a SQL Database on the user, nation, and region parameters.
 
     Args:
         user (str): The user identifier.
@@ -280,7 +270,6 @@ def nation_in_region(user: str, nation: str, region: str):
     if region == None:
         region = response
     if response == region:
-        superregion = get_superregion(region)
         region = simplify_region(region)
-        nation_json(user, nation, region, superregion)
+        add_nation_to_database(user, nation, region)
     return response
