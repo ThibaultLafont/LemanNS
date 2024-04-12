@@ -18,26 +18,46 @@ def get_lausanne_delegates_power():
     Returns:
         int: The power of the delegates in Lausanne.
     """
-    lausanne_votes = "# Lausanne Voting Power Breakdown\n\n**The East Pacific**\n"
-    lausanne_votes += f"{get_delegate_voting_power('the_east_pacific')}\n"
-    lausanne_votes += "**The Alstroemerian Comonwealths**\n"
-    ac_votes = (
-        get_delegate_voting_power('the_glorious_nations_of_iwaku') +
-        get_delegate_voting_power('eientei_gensokyo') +
-        get_delegate_voting_power('yggdrasil') +
-        get_delegate_voting_power('hetalia') +
-        get_delegate_voting_power('slavija') +
-        get_delegate_voting_power('japan')
-    )
-    lausanne_votes += f"{ac_votes}\n"
-    lausanne_votes += "**The Free Nations Federation**\n"
-    fnf_votes = (get_delegate_voting_power('the free nations region') + get_delegate_voting_power('hive') + get_delegate_voting_power('equiterra'))
-    lausanne_votes += f"{fnf_votes}\n"
-    lausanne_votes += "**Thaecia**\n"
-    lausanne_votes += f"{get_delegate_voting_power('thaecia')}\n"
-    lausanne_votes += "**Total**\n"
-    lausanne_votes += f"{ac_votes + fnf_votes + get_delegate_voting_power('thaecia') + get_delegate_voting_power('the_east_pacific')}\n"
-    return lausanne_votes
+    regions = ['the_east_pacific', 'the_glorious_nations_of_iwaku', 'eientei_gensokyo', 'yggdrasil', 'hetalia', 'slavija', 'japan', 'the free nations region', 'hive', 'equiterra', 'thaecia']
+    votes = {region: get_delegate_voting_power(region) for region in regions}
+
+    fnf_votes = votes['the free nations region'] + votes['hive'] + votes['equiterra']
+    ac_votes = votes['the_glorious_nations_of_iwaku'] + votes['eientei_gensokyo'] + votes['yggdrasil'] + votes['hetalia'] + votes['slavija'] + votes['japan']
+    lausanne_votes = ac_votes + fnf_votes + votes['thaecia'] + votes['the_east_pacific']
+    lausanne_str = f"""
+# Lausanne Voting Power Breakdown
+## The East Pacific
+{votes['the_east_pacific']}
+## The Alstroemerian Comonwealths
+**he Glorious Nations of Iwaku**
+{votes['the_glorious_nations_of_iwaku']}
+**Eientei Gensokyo**
+{votes['eientei_gensokyo']}
+**Yggdrasil**
+{votes['yggdrasil']}
+**Hetalia**
+{votes['hetalia']}
+**Slavija**
+{votes['slavija']}
+**Japan**
+{votes['japan']}
+**Total**
+{ac_votes}
+## The Free Nations Federation
+**The Free Nations Region**
+{votes['the free nations region']}
+**Hive**
+{votes['hive']}
+**Equiterra**
+{votes['equiterra']}
+**Total**
+{fnf_votes}
+## Thaecia
+{votes['thaecia']}
+## Total
+{lausanne_votes}
+"""
+    return lausanne_str
 
 ##################### STAT FUNCTIONS #####################
 
