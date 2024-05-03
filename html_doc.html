@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table of Contents</title>
+</head>
+<body>
+    <h1>Table of Contents</h1>
+    <ul>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#technologies-used">Technologies Used</a>
+            <ul>
+                <li><a href="#programming-language">Programming Language</a></li>
+                <li><a href="#discord-libraries">Discord Libraries</a></li>
+                <li><a href="#external-libraries">External Libraries</a></li>
+                <li><a href="#time-handling">Time Handling</a></li>
+                <li><a href="#nationstates-api">NationStates API</a></li>
+                <li><a href="#web-requests">Web Requests</a></li>
+                <li><a href="#xml-parsing">XML Parsing</a></li>
+                <li><a href="#other">Other</a></li>
+            </ul>
+        </li>
+        <li><a href="#usage">Usage</a>
+            <ul>
+                <li><a href="#owneradmin-commands">Owner/Admin Commands</a></li>
+                <li><a href="#regular-commands">Regular Commands</a></li>
+                <li><a href="#nationstates-verify">NationStates Verify</a></li>
+                <li><a href="#government-commands">Government Commands</a></li>
+                <li><a href="#welcome-commands">Welcome Commands</a></li>
+                <li><a href="#recruitment-commands">Recruitment Commands</a></li>
+                <li><a href="#lausanne-commands">Lausanne Commands</a></li>
+            </ul>
+        </li>
+    </ul>
+
+    <h1>Léman</h1>
+    <h2><em>Discord Bot for Nationstates</em></h2>
+    <p>Léamn is a Discord Bot coded in Python whose primary aim is to facilitate everyday tasks carried out by communities present on the <a href="https://www.nationstates.net">NationStates</a> site.</p>
+
+    <h2 id="features">Features</h2>
+    <ul>
+        <li>Information commands related to NationStates (checking a nation, region, etc.)</li>
+        <li>Welcome message automatically adding newly arrived nations to a region</li>
+        <li>Nation Verification with an optional autorole system</li>
+        <li>Manual recruitment assistance (fetching newly founded nations and creating a telegram link)</li>
+        <li>Election calculator (single-transferable vote and instant run-off voting systems)</li>
+        <li><a href="https://www.nationstates.net/page=un">World Assembly</a> tools to empower your region's WA Culture</li>
+    </ul>
+
+    <h2 id="technologies-used">Technologies Used</h2>
+    <h3 id="programming-language">Programming Language</h3>
+    <ul>
+        <li>Python</li>
+    </ul>
+
+    <h3 id="discord-libraries">Discord Libraries</h3>
+    <ul>
+        <li><a href="https://discordpy.readthedocs.io/">discord.py</a> - A Python library for interacting with the Discord API.</li>
+    </ul>
+
+    <h3 id="external-libraries">External Libraries</h3>
+    <ul>
+        <li><a href="https://docs.aiohttp.org/">aiohttp</a> - An asynchronous HTTP client/server framework for asyncio.</li>
+        <li><a href="https://github.com/theskumar/python-dotenv">python-dotenv</a> - For loading environment variables from a .env file so as to hide secret information related to the Bot.</li>
+    </ul>
+
+    <h3 id="time-handling">Time Handling</h3>
+    <ul>
+        <li><a href="https://docs.python.org/3/library/datetime.html">datetime</a> - Python's built-in library for date and time handling.</li>
+    </ul>
+
+    <h3 id="nationstates-api">NationStates API</h3>
+    <ul>
+        <li><a href="https://www.nationstates.net/pages/api.html">NationStates API</a> - Used to retrieve informationr relative to NationStates.</li>
+    </ul>
+
+    <h3 id="web-requests">Web Requests</h3>
+    <ul>
+        <li><a href="https://docs.python-requests.org/">requests</a> - A popular HTTP library for making requests, needed to interact with o the NationStates API.</li>
+    </ul>
+
+    <h3 id="xml-parsing">XML Parsing</h3>
+    <ul>
+        <li><a href="https://docs.python.org/3/library/xml.etree.elementtree.html">xml.etree.ElementTree</a> - Python's built-in library for parsing XML, which is the format NationStates' API responses use.</li>
+    </ul>
+
+    <h3 id="other">Other</h3>
+    <ul>
+        <li><a href="https://docs.python.org/3/library/sqlite3.html">sqlite3</a> - Python's built-in library for interacting with SQLite databases.</li>
+        <li><a href="https://docs.python.org/3/library/asyncio.html">asyncio</a> - For handling asynchronous code, necessary when coding bots in Python.</li>
+    </ul>
+
+    <h2 id="usage">Usage</h2>
+
+    <h3 id="owneradmin-commands">Owner/Admin Commands</h3>
+    <ul>
+        <li><strong>Sync</strong>
+            <ul>
+                <li>Description: Syncs the server with the bot's slash commands in case they do not appear.</li>
+                <li>Permissions: Administrator</li>
+                <li>Usage: <code>!sync</code></li>
+            </ul>
+        </li>
+        <li><strong>Sleep</strong>
+            <ul>
+                <li>Description: Shuts down the bot.</li>
+                <li>Owner Only</li>
+                <li>Usage: <code>!sleep</code></li>
+            </ul>
+        </li>
+        <li><strong>Backup</strong>
+            <ul>
+                <li>Description: Backup the SQLite databases.</li>
+                <li>Owner Only</li>
+                <li>Usage: <code>!backup</code></li>
+            </ul>
+        </li>
+        <li><strong>Empty Region File</strong>
+            <ul>
+                <li>Description: Empty the SQLite database of a region.</li>
+                <li>Owner Only</li>
+                <li>Usage: <code>/empty_region_file [region]</code></li>
+            </ul>
+        </li>
+    </ul>
+
+    <h3 id="regular-commands">Regular Commands</h3>
+    <ul>
+        <li><strong>Help</strong>
+            <ul>
+                <li>Description: Display the bot's help menu.</li>
+                <li>Usage: <code>/help</code></li>
+            </ul>
+        </li>
+    </ul>
+
+    <h3 id="nationstates-verify">NationStates Verify</h3>
+    <ul>
+        <li><strong>Verify</strong>
+            <ul>
+                <li>Description: Verify your nation.</li>
+                <li>Usage: <code>/verify [nation] [key]</code></li>
+            </ul>
+        </li>
+        <li><strong>Verify Auto</strong>
+            <ul>
+                <li>Description: Verify your nation to automatically get roled in the server.</li>
+                <li>Usage: <code>/verify_auto [nation]</code></li>
+            </ul>
+        </li>
+        <li><strong>Change Nation</strong>
+            <ul>
+                <li>Description: Change the nation of an already verified user.</li>
+                <li>Permissions: Manage Roles</li>
+                <li>Usage: <code>/change_nation [user] [nation] [region]</code></li>
+            </ul>
+        </li>
+        <li><strong>Checkup</strong>
+            <ul>
+                <li>Description: Updates the list of nations in a region.</li>
+                <li>Permissions: Administrator</li>
+                <li>Usage: <code>/checkup [region]</code></li>
+            </ul>
+        </li>
+    </ul>
+
+    <h3 id="government-commands">Government Commands</h3>
+    <ul>
+        <li><strong>STV Calculate</strong>
+            <ul>
+                <li>Description: Calculate the results of an STV election.</li>
+                <li>Requires Role: "Government"</li>
+                <li>Usage: <code>/stv_calculate [election]</code></li>
+            </ul>
+        </li>
+    </ul>
+
+    <h3 id="welcome-commands">Welcome Commands</h3>
+    <ul>
+        <li><strong>Welcome</strong>
+            <ul>
+                <li>Description: Generate your region's welcome message.</li>
+                <li>Usage: <code>/welcome [region]</code></li>
+            </ul>
+        </li>
+        <li><strong>Set Welcome Message</strong>
+            <ul>
+                <li>Description: Set the welcome message for a region.</li>
+                <li>Usage: <code>/set_welcome_message [region] [message]</code></li>
+                <li>Note: DM interactions required for Communications Authority (in a NationStates region) verification.</li>
+            </ul>
+        </li>
+    </ul>
+
+    <h3 id="recruitment-commands">Recruitment Commands</h3>
+    <ul>
+        <li><strong>Exclude Region</strong>
+            <ul>
+                <li>Description: Exclude a region from the recruitment process of your region.</li>
+                <li>Permissions: Recruiter role</li>
+                <li>Usage: <code>/exclude_region [your_region] [region_to_exclude]</code></li>
+            </ul>
+        </li>
+        <li><strong>Recruit</strong>
+            <ul>
+                <li>Description: Recruit new nations for your region.</li>
+                <li>Permissions: Recruiter role</li>
+                <li>Usage: <code>/recruit [region]</code></li>
+            </ul>
+        </li>
+        <li><strong>Recruit Session</strong>
+            <ul>
+                <li>Description: Start a recruitment session for a region.</li>
+                <li>Permissions: Recruiter role</li>
+                <li>Usage: <code>/recruit_session [region] [call_wait]</code></li>
+            </ul>
+        </li>
+        <li><strong>Set Template</strong>
+            <ul>
+                <li>Description: Set the telegram template for the recruitment process.</li>
+                <li>Permissions: Recruiter role</li>
+                <li>Usage: <code>/set_template [template]</code></li>
+            </ul>
+        </li>
+    </ul>
+
+    <h3 id="lausanne-commands">Lausanne Commands</h3>
+    <ul>
+        <li><strong>Lausanne Votes</strong>
+            <ul>
+                <li>Description: Get the power of the delegates in the <a href="https://forum.theeastpacific.com/t/the-second-convention-of-lausanne/16883">Second Convention of Lausanne</a>.</li>
+                <li>Usage: <code>/lausanne_votes</code></li>
+            </ul>
+        </li>
+    </ul>
+</body>
+</html>
