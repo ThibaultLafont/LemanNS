@@ -24,6 +24,8 @@
 
 Léamn is a Discord Bot coded in Python whose primary aim is to facilitate everyday tasks carried out by communities present on the [NationStates](https://www.nationstates.net) site.
 
+This is a side project to those done during my Epitech curriculum.
+
 ## Features
 
 - Information commands related to NationStates (checking a nation, region, etc.)
