@@ -53,6 +53,44 @@ def get_superregion(region: str):
     return None
 
 ##################### REGION LIST FUNCTIONS #####################
+# def add_nation_to_database(user: str, nation: str, region:str):
+#     """
+#     Add a nation to a SQL Database on the user, nation, and region parameters.
+
+#     Args:
+#         user (str): The user identifier.
+#         nation (str): The nation to be added.
+#         region (str): The region where the nation belongs.
+#         superregion (str): The superregion where the region belongs (optional).
+
+#     Returns:
+#         None
+#     """
+#     conn = sqlite3.connect(db_path)
+#     cursor = conn.cursor()
+#     cursor.execute(f'''CREATE TABLE IF NOT EXISTS {region} (
+#         nation TEXT PRIMARY KEY,
+#         discordid INTEGER
+#         )
+#     ''')
+
+#     try:
+#         cursor.execute(f"SELECT * FROM {region}")
+#         rows = cursor.fetchall()
+#         nations_list = {row[0]: row[1] for row in rows}
+#     except sqlite3.Error:
+#         nations_list = {}
+
+#     key = str(user.id)
+#     if key in nations_list:
+#         print(f"User '{user}' already exists in the list.")
+#         return
+#     if nation in nations_list.values():
+#         print(f"Nation '{nation}' already exists in the list.")
+#         return
+
+#     cursor.execute(f"INSERT INTO {region} (nation, discordid) VALUES (?, ?)", (nation, key))
+#     conn.commit()
 def add_nation_to_database(user: str, nation: str, region:str):
     """
     Add a nation to a SQL Database on the user, nation, and region parameters.
@@ -61,7 +99,6 @@ def add_nation_to_database(user: str, nation: str, region:str):
         user (str): The user identifier.
         nation (str): The nation to be added.
         region (str): The region where the nation belongs.
-        superregion (str): The superregion where the region belongs (optional).
 
     Returns:
         None
@@ -75,22 +112,18 @@ def add_nation_to_database(user: str, nation: str, region:str):
     ''')
 
     try:
-        cursor.execute(f"SELECT * FROM {region}")
-        rows = cursor.fetchall()
-        nations_list = {row[0]: row[1] for row in rows}
+        cursor.execute(f"SELECT * FROM {region} WHERE nation = ?", (nation,))
+        existing_nation = cursor.fetchone()
     except sqlite3.Error:
-        nations_list = {}
+        existing_nation = None
 
     key = str(user.id)
-    if key in nations_list:
-        print(f"User '{user}' already exists in the list.")
-        return
-    if nation in nations_list.values():
+    if existing_nation:
         print(f"Nation '{nation}' already exists in the list.")
         return
-
-    cursor.execute(f"INSERT INTO {region} (nation, discordid) VALUES (?, ?)", (nation, key))
-    conn.commit()
+    else:
+        cursor.execute(f"INSERT INTO {region} (nation, discordid) VALUES (?, ?)", (nation, key))
+        conn.commit()
 
 
 def region_checkup(region: str):
