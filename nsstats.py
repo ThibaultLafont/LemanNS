@@ -1,9 +1,5 @@
 import requests
-import json
-import os
 import xml.etree.ElementTree as ET
-from datetime import datetime, timezone, timedelta
-from json.decoder import JSONDecodeError
 
 headers = {
     "User-Agent": "Discord: Altys, Nation: Altys or Islonia"

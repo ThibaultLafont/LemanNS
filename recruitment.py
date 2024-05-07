@@ -2,8 +2,7 @@ import requests
 import sqlite3
 import os
 import xml.etree.ElementTree as ET
-from datetime import datetime, timezone, timedelta
-from json.decoder import JSONDecodeError
+from datetime import datetime, timezone
 
 headers = {
     "User-Agent": "Discord: Altys, Nation: Altys or Islonia"
