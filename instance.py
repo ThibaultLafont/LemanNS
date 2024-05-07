@@ -334,66 +334,63 @@ class RecruitButton(discord.ui.View):
             if isinstance(item, discord.ui.Button):
                 item.disabled = False
 
+async def send_new_nations(ctx, new_nations, view):
+    new_nations_str = f"{ctx.user.mention}\n"
+    for nation in new_nations:
+        new_nations_str += nation + '\n\n'
+    if len(new_nations_str) > 2000:
+        return await send_large_message(ctx, new_nations_str, view)
+    else:
+        return await send_small_message(ctx, new_nations_str, view)
+
+async def send_large_message(ctx, new_nations_str, view):
+    await ctx.channel.send("Too many new nations to recruit, separating into multiple messages...")
+    new_nations_list = new_nations_str.split('\n\n')
+    for nation in new_nations_list:
+        await ctx.channel.send(nation)
+        view.enable_all_buttons()
+
+async def send_small_message(ctx, new_nations_str, view):
+    view.enable_all_buttons()
+    await ctx.channel.send(new_nations_str)
+
+async def ask_to_continue(ctx, view):
+    await ctx.channel.send("Do you want to continue the session?", view=view)
+    await view.wait()
+    if view.result is False:
+        view.result = None
+        print("Session stopped")
+        return False
+    elif view.result is True:
+        view.result = None
+        print("Session continues")
+        return True
+
 @bot.tree.command(name="recruit_session", description="Start a recruitment session for a region")
-async def recruit_session(ctx, region: str, call_wait: int):
+async def recruit_session(interaction, region: str, call_wait: int):
     start_time = time.perf_counter()
-    await ctx.response.send_message(f"Recruitment session started for {region}.")
+    await interaction.response.send_message(f"Recruitment session started for {region}.")
     while True:
         elapsed_time = time.perf_counter() - start_time
         remaining_time = call_wait * 60 - elapsed_time
 
+        view = RecruitButton()
         if elapsed_time >= call_wait * 60:
-            view = RecruitButton()
-            new_nations = recruitment.recruit_new_nations(region, ctx.user.id)
+            new_nations = recruitment.recruit_new_nations(region, interaction.user.id)
             print(new_nations)
-            new_nations_str = f"{ctx.user.mention}\n"
             if new_nations != "NOTEMPLATE" and new_nations != None:
-                for i in range(len(new_nations)):
-                    new_nations_str += new_nations[i]
-                    new_nations_str += '\n\n'
-                if len(new_nations_str) > 2000:
-                    await ctx.channel.send("Too many new nations to recruit, separating into multiple messages...")
-                    new_nations_list = new_nations_str.split('\n\n')
-                    for i in range(len(new_nations_list)):
-                        await ctx.channel.send(new_nations_list[i])
-                        view.enable_all_buttons()
-                    await ctx.channel.send("Do you want to continue the session?", view=view)
-                    await view.wait()
-                    if view.result is False:
-                        view.result = None
-                        print("Session stopped")
-                        break
-                    elif view.result is True:
-                        view.result = None
-                        print("Session continues")
-                else:
-                    view.enable_all_buttons()
-                    await ctx.channel.send(new_nations_str, view=view)
-                    await view.wait()
-                    if view.result is False:
-                        view.result = None
-                        print("Session stopped")
-                        break
-                    elif view.result is True:
-                        view.result = None
-                        print("Session continues")
+                await send_new_nations(interaction, new_nations, view)
             elif new_nations == "NOTEMPLATE":
-                await ctx.channel.send("You did not set a telegram template. Please use the ``/set_template`` function to do so.")
+                await interaction.channel.send("You did not set a telegram template. Please use the ``/set_template`` function to do so.")
             else:
                 view.enable_all_buttons()
-                await ctx.channel.send("No new nations to recruit.", view=view)
-                await view.wait()
-                if view.result is False:
-                    view.result = None
-                    print("Session stopped")
-                    break
-                elif view.result is True:
-                    view.result = None
-                    print("Session continues")
+                await interaction.channel.send("No new nations to recruit.")
             print(f"view result == {view.result}")
             start_time = time.perf_counter()
             remaining_time = call_wait * 60
             print(f"next call in {remaining_time} seconds")
+            if not await ask_to_continue(interaction, view):
+                break
 
         await asyncio.sleep(min(remaining_time, 1))
 
@@ -418,5 +415,11 @@ async def lausanne_votes(ctx):
 # async def update_govt_overview(ctx, prime_minister: str, world_assembly_delegate: str, domestic_affairs_minister: str, foreign_affairs_minister: str, legal_affairs_minister: str, cultural_affairs_minister: str, defence_minister: str, secretary_of_integration: str, secretary_of_gameside: str, secretary_of_media: str, secretary_of_roleplay: str, deputy_prime_minister: str, vice_delegate: str, deputy_domestic_affairs_minister: str, deputy_foreign_affairs_minister: str, deputy_legal_affairs_minister: str, deputy_cultural_affairs_minister: str, deputy_defence_minister: str):
 #     member = ctx.user
 #     print("Updating government overview...")
+
+@bot.tree.command(name="timer", description="Start a timer, duration in minutes")
+async def timer(ctx, duration: int):
+    await ctx.response.send_message(f"Timer started for {duration} minute{'' if duration == 1 else 's'}")
+    await asyncio.sleep(duration * 60)
+    await ctx.channel.send(f"<@{ctx.user.id}>Timer ended after {duration} minute{'' if duration == 1 else 's'}")
 
 bot.run(TOKEN)
