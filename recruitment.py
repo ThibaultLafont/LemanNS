@@ -102,6 +102,9 @@ def retrieve_excluded_regions(region: str):
 
     try:
         excluded_regions = [row[0] for row in cursor.execute('SELECT to_exclude FROM excluded_regions WHERE region = ?', (region,)).fetchall()]
+        if not excluded_regions:
+            return []
+        print(f"excluded regions : {excluded_regions}")
         excluded_regions = excluded_regions[0].split(",")
         excluded_regions = [region.lower() for region in excluded_regions]
         excluded_regions = [region.replace(" ", "_") for region in excluded_regions]
