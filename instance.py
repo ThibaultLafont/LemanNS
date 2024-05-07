@@ -410,12 +410,6 @@ async def lausanne_votes(ctx):
         print(f"An error occurred: {e}")
         await ctx.channel.send("An error occurred, please check console logs")
 
-
-# @bot.tree.command(name="update_govt_overview", description="Update the government overview")
-# async def update_govt_overview(ctx, prime_minister: str, world_assembly_delegate: str, domestic_affairs_minister: str, foreign_affairs_minister: str, legal_affairs_minister: str, cultural_affairs_minister: str, defence_minister: str, secretary_of_integration: str, secretary_of_gameside: str, secretary_of_media: str, secretary_of_roleplay: str, deputy_prime_minister: str, vice_delegate: str, deputy_domestic_affairs_minister: str, deputy_foreign_affairs_minister: str, deputy_legal_affairs_minister: str, deputy_cultural_affairs_minister: str, deputy_defence_minister: str):
-#     member = ctx.user
-#     print("Updating government overview...")
-
 @bot.tree.command(name="timer", description="Start a timer, duration in minutes")
 async def timer(ctx, duration: int):
     await ctx.response.send_message(f"Timer started for {duration} minute{'' if duration == 1 else 's'}")
