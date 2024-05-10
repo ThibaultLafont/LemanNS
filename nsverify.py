@@ -157,17 +157,19 @@ def verify_nation(nation: str, key: str):
         return True
     return False
 
-def change_user_nation(user: str, nation, region: str):
+def change_user_nation(user, nation, region: str):
     """
     Changes the nation of a user in the JSON file.
 
     Args:
-        user (str): The user identifier.
+        user (class): The user identifier.
         nation (str): The nation to change to.
 
     Returns:
         None
     """
+    region = simplify_region(region)
+    print(f"region == {region}")
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute(f'''CREATE TABLE IF NOT EXISTS {region} (
@@ -229,18 +231,19 @@ def simplify_region(region: str):
         str: The abbreviation of the region.
 
     """
+    region = region.lower()
     match(region):
-        case "The East Pacific":
+        case "the east pacific":
             return "TEP"
-        case 'The Glorious Nations of Iwaku':
+        case 'the glorious nations of iwaku':
             return "Iwaku"
-        case 'Eientei Gensokyo':
+        case 'eientei gensokyo':
             return "EG"
-        case 'Conch Kingdom':
+        case 'conch kingdom':
             return "CK"
-        case 'Cape of Good Hope':
+        case 'cape of good hope':
             return "CGH"
-        case 'Lands End':
+        case 'lands end':
             return "LE"
     return region
 
