@@ -168,8 +168,12 @@ async def verify_auto(interaction, nation: str):
             region = nsverify.nation_in_region(user, nation, None)
             server = interaction.guild  # Assuming you have the server (guild) available
             role = discord.utils.get(server.roles, name=region)
+
             if role:
                 await interaction.user.add_roles(role)
+            else:
+                print(f"Role '{region}' does not exist in the server.")
+                await interaction.channel.send(f"Role '{region}' does not exist in the server.")
         else:
             await user.send("Not verified")
 
