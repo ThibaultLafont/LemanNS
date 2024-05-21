@@ -25,7 +25,7 @@ def get_lausanne_delegates_power():
 ## The East Pacific
 {votes['the_east_pacific']}
 ## The Alstroemerian Comonwealths
-**he Glorious Nations of Iwaku**
+**The Glorious Nations of Iwaku**
 {votes['the_glorious_nations_of_iwaku']}
 **Eientei Gensokyo**
 {votes['eientei_gensokyo']}
